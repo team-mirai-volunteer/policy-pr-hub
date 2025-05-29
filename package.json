@@ -1,0 +1,31 @@
+{
+  "name": "policy-pr-hub",
+  "version": "0.1.0",
+  "description": "政策プルリク活用のためのプラットフォーム",
+  "main": "index.js",
+  "scripts": {
+    "dev": "echo \"開発サーバーの起動コマンドをここに設定してください\" && exit 1",
+    "build": "echo \"ビルドコマンドをここに設定してください\" && exit 1",
+    "start": "echo \"本番環境起動コマンドをここに設定してください\" && exit 1",
+    "test": "echo \"テストコマンドをここに設定してください\" && exit 1",
+    "lint": "echo \"リントコマンドをここに設定してください\" && exit 1",
+    "format": "echo \"フォーマットコマンドをここに設定してください\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/team-mirai-volunteer/policy-pr-hub.git"
+  },
+  "keywords": [
+    "政策",
+    "プルリクエスト",
+    "市民参加"
+  ],
+  "author": "Team Mirai Volunteer",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/team-mirai-volunteer/policy-pr-hub/issues"
+  },
+  "homepage": "https://github.com/team-mirai-volunteer/policy-pr-hub#readme",
+  "devDependencies": {},
+  "dependencies": {}
+}
