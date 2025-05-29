@@ -1,0 +1,95 @@
+name: 日次PRデータ更新
+
+on:
+  schedule:
+    # 毎日午前3時（UTC）に実行
+    - cron: "0 3 * * *"
+  workflow_dispatch: # 手動実行も可能にする
+
+jobs:
+  update-pr-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリのチェックアウト
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Python環境のセットアップ
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: 依存関係のインストール
+        run: |
+          pip install -r requirements.txt
+
+      - name: PRデータ収集の実行
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python src/collectors/pr_collector_main.py --output-dir data/prs
+          echo "PRデータ収集が完了しました"
+
+      - name: 政策レポートの生成
+        run: |
+          python -c "
+          from src.generators.policy_report import PolicyReportGenerator
+          generator = PolicyReportGenerator()
+          generator.generate_reports('data/prs', 'data/reports')
+          "
+          echo "政策レポートの生成が完了しました"
+
+      - name: セクション分析レポートの生成
+        run: |
+          python -c "
+          import json
+          import os
+          from pathlib import Path
+          from src.analyzers.section_analyzer import SectionAnalyzer
+          
+          # PRデータの読み込み
+          pr_data = []
+          input_dir = Path('data/prs')
+          json_files = list(input_dir.glob('*.json'))
+          
+          for json_file in json_files:
+              with open(json_file, encoding='utf-8') as f:
+                  pr = json.load(f)
+                  pr_data.append(pr)
+          
+          # セクション分析
+          analyzer = SectionAnalyzer()
+          results = analyzer.analyze_prs(pr_data)
+          
+          # レポート生成
+          os.makedirs('data/reports/sections', exist_ok=True)
+          analyzer.generate_section_report(results, 'data/reports/sections/section_report.md')
+          "
+          echo "セクション分析レポートの生成が完了しました"
+
+      - name: 変更のコミットとプッシュ
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          
+          # データファイルの追加
+          if [ -d "data/prs" ]; then
+            git add data/prs/
+          fi
+          
+          # レポートファイルの追加
+          if [ -d "data/reports" ]; then
+            git add data/reports/
+          fi
+          
+          # 変更がある場合のみコミットする
+          if git diff --staged --quiet; then
+            echo "コミットする変更はありません"
+          else
+            timestamp=$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S JST')
+            git commit -m "PRデータとレポートの更新 - ${timestamp}"
+            git push
+            echo "変更をプッシュしました"
+          fi
