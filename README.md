@@ -8,6 +8,10 @@
 - 政策チームの活動を支援するための洞察とレポートを生成する
 - 市民参加による政策改善プロセスの透明性と効率性を向上させる
 
+## いどばた政策について
+
+「いどばた政策」は[digitaldemocracy2030/idobata](https://github.com/digitaldemocracy2030/idobata)リポジトリのpolicy-editモジュールで、市民が政策提案をGitHubのプルリクエスト形式で提出し、議論・改善するためのシステムです。
+
 ## 機能概要
 
 - PRデータの収集・整理機能
@@ -43,13 +47,28 @@ pip install -r requirements.txt
 # 環境変数の設定
 export GITHUB_TOKEN=your_github_token
 
-# PRデータ収集の実行
-python src/collectors/pr_collector_main.py
+# PRデータ収集の実行例（更新時間順に収集）
+python src/collectors/pr_collector_main.py --mode update
+
+# PRデータ収集の実行例（連番で収集）
+python src/collectors/pr_collector_main.py --mode sequential --start-number 1 --end-number 100
 ```
+
+個人の実験では自分のGitHub Tokenを使用してください。GitHub Action上での実行は別途secretを設定します。
+
+## 主要コンポーネント
+
+このプロジェクトは主に3つの機能コンポーネントで構成されています：
+
+1. **収集機能** (`src/collectors/`): GitHub APIを使用してPRデータを収集
+2. **分析機能** (`src/analyzers/`): 収集したPRデータを分析
+3. **レポート生成機能** (`src/generators/`): 分析結果からレポートを生成
 
 ## コントリビューション
 
 プロジェクトへの貢献に興味がある方は、[CONTRIBUTING.md](./CONTRIBUTING.md)をご覧ください。
+
+コミュニケーションはSlackチャンネルで行われています。参加方法については、Issueで質問するか、メンテナーに直接お問い合わせください。
 
 ## ライセンス
 
