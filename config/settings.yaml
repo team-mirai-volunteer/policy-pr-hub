@@ -1,0 +1,22 @@
+github:
+  repo_owner: "team-mirai"
+  repo_name: "policy"
+  token_env_var: "GITHUB_TOKEN"
+  api_base_url: "https://api.github.com"
+
+data:
+  storage_type: "file_per_pr"
+  base_dir: "data/prs"
+  reports_dir: "data/reports"
+
+analysis:
+  focus_areas: ["policy_sections", "improvement_proposals", "citizen_feedback"]
+
+api:
+  retry_count: 3
+  rate_limit_wait: true
+  request_delay: 0.5
+
+collectors:
+  update_interval: 3600
+  max_workers: 10
