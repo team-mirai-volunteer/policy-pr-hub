@@ -94,7 +94,7 @@ python src/collectors/pr_collector_main.py --mode sequential --start-number 1 --
 
 プロジェクトへの貢献に興味がある方は、[CONTRIBUTING.md](./CONTRIBUTING.md)をご覧ください。
 
-コミュニケーションはSlackチャンネルで行われています。参加方法については、Issueで質問するか、メンテナーに直接お問い合わせください。
+エンジニアとしてボランティアに参加希望の方は、[チームみらいのボランティア募集ページ](https://team-mir.ai/#volunteer)からご応募ください。コミュニケーションはSlackチャンネルで行われています。
 
 ## ライセンス
 
