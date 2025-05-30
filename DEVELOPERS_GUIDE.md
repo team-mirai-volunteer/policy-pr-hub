@@ -16,12 +16,11 @@
 
 3. **分析基盤の提供**
    - 政策分野別の分析レポート生成
-   - 貢献者の専門分野分析
    - セクション（見出し）分析
 
 4. **政策改善プロセスの可視化**
    - どの政策分野に多くの改善提案があるかの可視化
-   - 貢献者の専門性や関心領域の把握
+   - 貢献者のパターンの把握
 
 5. **データ活用の促進**
    - 収集したデータを基にした新たな分析や可視化の可能性
@@ -134,7 +133,7 @@ report = analyzer.generate_section_report(section_results, output_file="reports/
 
 ### 3. 政策レポート生成（`PolicyReportGenerator`クラス）
 
-収集したPRデータから政策分野別のレポートや貢献者の専門分野レポートを生成するクラスです。
+収集したPRデータから政策分野別のレポートを生成するクラスです。
 
 **使用例**:
 
@@ -153,9 +152,6 @@ generator.generate_reports(input_dir, output_dir)
 pr_data = generator.load_pr_data_from_directory(input_dir)
 policy_areas = generator.group_prs_by_policy_area(pr_data)
 generator.generate_policy_area_report(policy_areas, output_file="data/reports/policy_areas.md")
-
-contributor_expertise = generator.analyze_contributor_expertise(pr_data)
-generator.generate_expertise_report(contributor_expertise, output_file="data/reports/contributor_expertise.md")
 ```
 
 ## 満たされていないユーザー価値と実装アイデア
