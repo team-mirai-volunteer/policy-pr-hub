@@ -26,6 +26,19 @@
 - [team-mirai/policy](https://github.com/team-mirai/policy) - 実際のPRが集まっているリポジトリ
 - [team-mirai-volunteer/pr-data](https://github.com/team-mirai-volunteer/pr-data) - 収集されたPRデータの保存先
 
+## GitHub Actionsによるデータ収集
+
+現在、[team-mirai/random](https://github.com/team-mirai/random)リポジトリのGitHub Actionsを使用して、PRデータを定期的に収集しています。このシステムは以下のユーザー価値を提供しています：
+
+1. **データ収集の自動化** - 定期的なPRデータの自動収集により、手動作業が不要
+2. **データの構造化と保存** - PRデータをJSON形式で構造化して保存
+3. **分析基盤の提供** - 政策分野別の分析レポート生成、貢献者の専門分野分析
+4. **政策改善プロセスの可視化** - どの政策分野に多くの改善提案があるかの可視化
+
+### 技術的制約
+
+**重要**: 政策提案PRは1700件以上あり、GitHub APIのRate Limitに当たるため、一度にすべてのPRデータを取得することはできません。そのため、差分取得（incremental collection）が必須となっています。現在の実装では、更新時間順での収集や連番での収集などの方法でこの制約に対応しています。
+
 ## 開発環境のセットアップ
 
 ### 必要条件
