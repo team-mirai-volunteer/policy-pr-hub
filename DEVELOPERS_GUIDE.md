@@ -2,6 +2,11 @@
 
 このガイドは、政策プルリク活用ハブ（Policy PR Hub）の開発者向けに、システムの概要、実装方法、および拡張ポイントについて説明します。
 
+> **関連ドキュメント**:
+> - [README.md](./README.md) - プロジェクトの概要と基本情報
+> - [DEVELOPMENT_DETAILS.md](./DEVELOPMENT_DETAILS.md) - 技術スタック、実装上の注意点、満たされていないユーザー価値
+> - [CONTRIBUTING.md](./CONTRIBUTING.md) - プロジェクトへの貢献方法
+
 ## システム全体の目的とユーザー価値
 
 政策プルリク活用ハブは、「いどばた政策」システムで収集された政策改善提案PRデータを分析・活用するためのプラットフォームです。以下のユーザー価値を提供しています：
@@ -253,9 +258,9 @@ def detect_similar_prs(pr_data_list, similarity_threshold=0.7):
     return similar_pairs
 ```
 
-### 3. 自動ラベリング機能
+### 3. 自動ラベリング機能の拡張
 
-**課題**: PRを適切な担当者に割り当てるための自動ラベリング機能がない。
+**現状**: 現在`team-mirai/random`リポジトリのGitHub Actionsで自動ラベリング機能が実装・稼働中です。
 
 **実装アイデア**:
 ```python

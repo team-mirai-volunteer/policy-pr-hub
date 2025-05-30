@@ -77,6 +77,19 @@ python src/collectors/pr_collector_main.py --mode sequential --start-number 1 --
 2. **分析機能** (`src/analyzers/`): 収集したPRデータを分析
 3. **レポート生成機能** (`src/generators/`): 分析結果からレポートを生成
 
+## ドキュメントガイド
+
+プロジェクトについて詳しく知りたい場合は、以下のドキュメントを参照してください：
+
+- [開発者ガイド（DEVELOPERS_GUIDE.md）](./DEVELOPERS_GUIDE.md) - システムの詳細な説明、実装例、拡張ポイントなど
+- [開発詳細（DEVELOPMENT_DETAILS.md）](./DEVELOPMENT_DETAILS.md) - 技術スタック、実装上の注意点、満たされていないユーザー価値など
+- [コントリビューション（CONTRIBUTING.md）](./CONTRIBUTING.md) - プロジェクトへの貢献方法、Issue管理、PRプロセスなど
+
+目的別の推奨ドキュメント：
+- **新機能を実装したい方**: まず[開発者ガイド](./DEVELOPERS_GUIDE.md)を読み、実装例を参考にしてください
+- **プロジェクトの技術的制約を知りたい方**: [開発詳細](./DEVELOPMENT_DETAILS.md)の「実装上の注意点」セクションを参照してください
+- **貢献方法を知りたい方**: [コントリビューション](./CONTRIBUTING.md)ガイドを参照してください
+
 ## コントリビューション
 
 プロジェクトへの貢献に興味がある方は、[CONTRIBUTING.md](./CONTRIBUTING.md)をご覧ください。
