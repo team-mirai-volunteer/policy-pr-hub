@@ -59,13 +59,32 @@ pip install -r requirements.txt
 
 # 環境変数の設定
 export GITHUB_TOKEN=your_github_token
-
-# PRデータ収集の実行例（更新時間順に収集）
-python src/collectors/pr_collector_main.py --mode update
-
-# PRデータ収集の実行例（連番で収集）
-python src/collectors/pr_collector_main.py --mode sequential --start-number 1 --end-number 100
 ```
+
+### 開発の始め方
+
+**注意**: PRデータの収集は GitHub API の Rate Limit に当たりやすく、フル取得を実行すると長時間（1時間以上）待つことになります。初めての方は以下の方法で開発を始めることをお勧めします：
+
+1. **既存のJSONデータを使用した分析から始める**
+   ```bash
+   # team-mirai-volunteer/pr-dataリポジトリから最新のPRデータを取得
+   git clone https://github.com/team-mirai-volunteer/pr-data.git
+   
+   # 既存のJSONデータを使用して分析を実行
+   python src/analyzers/section_analyzer_main.py --input-dir ../pr-data/prs --output-dir ./output
+   
+   # または政策分野レポートを生成
+   python src/generators/policy_report_main.py --input-dir ../pr-data/prs --output-dir ./output
+   ```
+
+2. **少量のPRデータのみを収集する場合**
+   ```bash
+   # 最新の10件のPRのみを収集（Rate Limitに当たりにくい）
+   python src/collectors/pr_collector_main.py --mode update --limit 10
+   
+   # または特定の範囲のPRのみを収集
+   python src/collectors/pr_collector_main.py --mode sequential --start-number 1 --end-number 10
+   ```
 
 個人の実験では自分のGitHub Tokenを使用してください。GitHub Action上での実行は別途secretを設定します。
 
