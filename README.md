@@ -12,6 +12,8 @@
 
 「いどばた政策」は[digitaldemocracy2030/idobata](https://github.com/digitaldemocracy2030/idobata)リポジトリのpolicy-editモジュールで、市民が政策提案をGitHubのプルリクエスト形式で提出し、議論・改善するためのシステムです。
 
+[チームみらい](https://policy.team-mir.ai/view/README.md)は、このシステムを活用してマニフェストを公開しています。党首の[安野たかひろ氏のツイート](https://x.com/takahiroanno/status/1923253426747736186)にあるように、チームみらいでは議論途中・作業途中のマニフェストを公開し、市民からの改善提案を積極的に取り入れる透明性の高いアプローチを採用しています。
+
 ## 機能概要
 
 - PRデータの収集・整理機能
@@ -24,6 +26,7 @@
 このプラットフォームは以下のデータソースを活用します：
 
 - [team-mirai/policy](https://github.com/team-mirai/policy) - 実際のPRが集まっているリポジトリ
+- [team-mirai/random](https://github.com/team-mirai/random) - GitHub Actionsを使用してPRデータを定期的に収集するリポジトリ
 - [team-mirai-volunteer/pr-data](https://github.com/team-mirai-volunteer/pr-data) - 収集されたPRデータの保存先
 
 ## GitHub Actionsによるデータ収集
