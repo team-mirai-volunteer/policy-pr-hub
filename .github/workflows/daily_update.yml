@@ -98,10 +98,10 @@ jobs:
             
             # カバレッジが95%未満の場合は警告
             COVERAGE=$(python -c "
-            import json, os
-            # Markdownレポートから情報を抽出するか、直接スクリプトから取得
-            print(95)  # デフォルト値として95%を設定（実際のカバレッジ計算は別途実装）
-            ")
+import json, os
+# Markdownレポートから情報を抽出するか、直接スクリプトから取得
+print(95)  # デフォルト値として95%を設定（実際のカバレッジ計算は別途実装）
+")
             
             if (( $(echo "$COVERAGE < 95" | bc -l) )); then
               echo "::warning::データカバレッジが95%未満です: ${COVERAGE}%"
