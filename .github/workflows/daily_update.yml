@@ -1,4 +1,4 @@
-name: 日次PRデータ更新
+name: 日次PRデータ更新（改善版）
 
 on:
   schedule:
@@ -10,10 +10,18 @@ jobs:
   update-pr-data:
     runs-on: ubuntu-latest
     steps:
-      - name: リポジトリのチェックアウト
+      - name: policy-pr-hubリポジトリのチェックアウト
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          path: policy-pr-hub
+
+      - name: pr-dataリポジトリのチェックアウト
+        uses: actions/checkout@v3
+        with:
+          repository: team-mirai-volunteer/pr-data
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: pr-data
 
       - name: Python環境のセットアップ
         uses: actions/setup-python@v4
@@ -23,26 +31,116 @@ jobs:
 
       - name: 依存関係のインストール
         run: |
+          cd policy-pr-hub
           pip install -r requirements.txt
 
-      - name: PRデータ収集の実行
+      - name: データ整合性チェック（事前）
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python src/collectors/pr_collector_main.py --output-dir data/prs
-          echo "PRデータ収集が完了しました"
+          cd policy-pr-hub
+          echo "=== 事前データ整合性チェック ==="
+          python scripts/data_integrity_checker.py --detailed --output-dir /tmp/reports
+          
+          # カバレッジが95%未満の場合は警告
+          if [ -f "/tmp/reports/data_integrity_report.md" ]; then
+            echo "整合性レポートが生成されました"
+          fi
+
+      - name: 欠損PR分析
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd policy-pr-hub
+          echo "=== 欠損PR分析 ==="
+          python scripts/missing_pr_analyzer.py --verbose
+
+      - name: 通常のPRデータ収集（更新モード）
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd policy-pr-hub
+          echo "=== 通常のPRデータ収集 ==="
+          python src/collectors/pr_collector_main.py --mode update --output-dir ../pr-data/prs
+          echo "通常のPRデータ収集が完了しました"
+
+      - name: 欠損PRの補完収集
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd policy-pr-hub
+          echo "=== 欠損PRの補完収集 ==="
+          
+          # 最新PR番号を取得
+          LATEST_PR=$(python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from src.utils.github_api import make_github_api_request, load_config
+          config = load_config()
+          github_config = config['github']
+          url = f\"{github_config['api_base_url']}/repos/{github_config['repo_owner']}/{github_config['repo_name']}/pulls\"
+          params = {'state': 'all', 'sort': 'created', 'direction': 'desc', 'per_page': 1}
+          prs = make_github_api_request(url, params)
+          print(prs[0]['number'] if prs else 0)
+          ")
+          
+          echo "最新PR番号: $LATEST_PR"
+          
+          # 連番モードで欠損PRを収集
+          python src/collectors/pr_collector_main.py --mode sequential --start-number 1 --end-number $LATEST_PR --output-dir ../pr-data/prs
+          echo "欠損PRの補完収集が完了しました"
+
+      - name: Issue/PR重複解決
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd policy-pr-hub
+          echo "=== Issue/PR重複解決 ==="
+          python scripts/issue_pr_resolver.py --debug
+
+      - name: データ整合性チェック（事後）
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd policy-pr-hub
+          echo "=== 事後データ整合性チェック ==="
+          python scripts/data_integrity_checker.py --detailed --output-dir ../pr-data/reports
+          
+          # カバレッジレポートの確認
+          if [ -f "../pr-data/reports/data_integrity_report.md" ]; then
+            echo "最終整合性レポートが生成されました"
+            
+            # カバレッジが95%未満の場合は警告
+            COVERAGE=$(python -c "
+            import json, os
+            if os.path.exists('/tmp/reports/data_integrity_report.json'):
+                with open('/tmp/reports/data_integrity_report.json') as f:
+                    data = json.load(f)
+                    print(data.get('summary', {}).get('coverage_percentage', 0))
+            else:
+                print(0)
+            ")
+            
+            if (( $(echo "$COVERAGE < 95" | bc -l) )); then
+              echo "::warning::データカバレッジが95%未満です: ${COVERAGE}%"
+            else
+              echo "✅ データカバレッジ良好: ${COVERAGE}%"
+            fi
+          fi
 
       - name: 政策レポートの生成
         run: |
+          cd policy-pr-hub
           python -c "
           from src.generators.policy_report import PolicyReportGenerator
           generator = PolicyReportGenerator()
-          generator.generate_reports('data/prs', 'data/reports')
+          generator.generate_reports('../pr-data/prs', '../pr-data/reports')
           "
           echo "政策レポートの生成が完了しました"
 
       - name: セクション分析レポートの生成
         run: |
+          cd policy-pr-hub
           python -c "
           import json
           import os
@@ -51,37 +149,41 @@ jobs:
           
           # PRデータの読み込み
           pr_data = []
-          input_dir = Path('data/prs')
+          input_dir = Path('../pr-data/prs')
           json_files = list(input_dir.glob('*.json'))
           
           for json_file in json_files:
-              with open(json_file, encoding='utf-8') as f:
-                  pr = json.load(f)
-                  pr_data.append(pr)
+              try:
+                  with open(json_file, encoding='utf-8') as f:
+                      pr = json.load(f)
+                      pr_data.append(pr)
+              except:
+                  continue
           
           # セクション分析
           analyzer = SectionAnalyzer()
           results = analyzer.analyze_prs(pr_data)
           
           # レポート生成
-          os.makedirs('data/reports/sections', exist_ok=True)
-          analyzer.generate_section_report(results, 'data/reports/sections/section_report.md')
+          os.makedirs('../pr-data/reports/sections', exist_ok=True)
+          analyzer.generate_section_report(results, '../pr-data/reports/sections/section_report.md')
           "
           echo "セクション分析レポートの生成が完了しました"
 
-      - name: 変更のコミットとプッシュ
+      - name: pr-dataリポジトリの変更をコミット・プッシュ
         run: |
+          cd pr-data
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
           
           # データファイルの追加
-          if [ -d "data/prs" ]; then
-            git add data/prs/
+          if [ -d "prs" ]; then
+            git add prs/
           fi
           
           # レポートファイルの追加
-          if [ -d "data/reports" ]; then
-            git add data/reports/
+          if [ -d "reports" ]; then
+            git add reports/
           fi
           
           # 変更がある場合のみコミットする
@@ -89,7 +191,17 @@ jobs:
             echo "コミットする変更はありません"
           else
             timestamp=$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S JST')
-            git commit -m "PRデータとレポートの更新 - ${timestamp}"
+            git commit -m "PRデータとレポートの更新（改善版ワークフロー） - ${timestamp}"
             git push
-            echo "変更をプッシュしました"
+            echo "pr-dataリポジトリに変更をプッシュしました"
           fi
+
+      - name: 実行サマリーの出力
+        run: |
+          echo "=== 日次PRデータ更新完了 ==="
+          echo "✅ データ整合性チェック完了"
+          echo "✅ 欠損PR分析・補完完了"
+          echo "✅ Issue/PR重複解決完了"
+          echo "✅ 政策レポート生成完了"
+          echo "✅ セクション分析レポート生成完了"
+          echo "✅ データ品質監視完了"

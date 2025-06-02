@@ -37,7 +37,7 @@ def check_data_integrity(detailed=False, output_dir=None):
     local_stats = validator.get_local_pr_stats("/home/ubuntu/pr-data")
     
     print("データ比較を実行中...")
-    comparison = validator.compare_data(github_stats, local_stats)
+    comparison = validator.compare_stats(github_stats, local_stats)
     
     print("\n=== 整合性確認結果 ===")
     print(f"GitHub総PR数: {comparison['github_total']:,}件")
@@ -56,7 +56,7 @@ def check_data_integrity(detailed=False, output_dir=None):
         output_path.mkdir(parents=True, exist_ok=True)
         
         report_file = output_path / "data_integrity_report.md"
-        report = validator.generate_validation_report(github_stats, local_stats, comparison)
+        report = validator.generate_validation_report(comparison, str(report_file))
         
         with open(report_file, 'w', encoding='utf-8') as f:
             f.write(report)
