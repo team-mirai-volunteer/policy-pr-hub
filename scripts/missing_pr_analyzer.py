@@ -52,7 +52,7 @@ def analyze_missing_prs(verbose=False):
     print("ローカルPRファイルを確認中...")
     
     local_pr_numbers = set()
-    prs_dir = Path("/home/ubuntu/pr-data/prs")
+    prs_dir = Path(config["data"]["base_dir"])
     for json_file in prs_dir.glob("*.json"):
         if json_file.name != "last_run_info.json":
             try:
