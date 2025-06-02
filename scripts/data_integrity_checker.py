@@ -40,16 +40,16 @@ def check_data_integrity(detailed=False, output_dir=None):
     comparison = validator.compare_stats(github_stats, local_stats)
     
     print("\n=== 整合性確認結果 ===")
-    print(f"GitHub総PR数: {comparison['github_total']:,}件")
-    print(f"ローカル総PR数: {comparison['local_total']:,}件")
-    print(f"カバレッジ: {comparison['coverage']:.1f}%")
-    print(f"不足PR数: {comparison['missing_count']:,}件")
+    print(f"GitHub総PR数: {comparison['summary']['github_total_prs']:,}件")
+    print(f"ローカル総PR数: {comparison['summary']['local_total_prs']:,}件")
+    print(f"カバレッジ: {comparison['summary']['coverage_percentage']:.1f}%")
+    print(f"不足PR数: {comparison['summary']['difference']:,}件")
     
     if detailed:
         print(f"\n=== 詳細統計 ===")
-        print(f"Open PR - GitHub: {github_stats['open_count']}, ローカル: {local_stats['open_count']}")
-        print(f"Closed PR - GitHub: {github_stats['closed_count']}, ローカル: {local_stats['closed_count']}")
-        print(f"Merged PR - GitHub: {github_stats['merged_count']}, ローカル: {local_stats['merged_count']}")
+        print(f"Open PR - GitHub: {github_stats['state_counts']['open']}, ローカル: {local_stats['state_counts']['open']}")
+        print(f"Closed PR - GitHub: {github_stats['state_counts']['closed']}, ローカル: {local_stats['state_counts']['closed']}")
+        print(f"Merged PR - GitHub: {github_stats['state_counts']['merged']}, ローカル: {local_stats['state_counts']['merged']}")
     
     if output_dir:
         output_path = Path(output_dir)
@@ -63,9 +63,9 @@ def check_data_integrity(detailed=False, output_dir=None):
         
         print(f"\n📄 詳細レポートを生成: {report_file}")
     
-    if comparison['coverage'] < 95.0:
+    if comparison['summary']['coverage_percentage'] < 95.0:
         print(f"\n⚠️  カバレッジが95%未満です。データ収集の実行を推奨します。")
-    elif comparison['coverage'] < 99.0:
+    elif comparison['summary']['coverage_percentage'] < 99.0:
         print(f"\n💡 カバレッジは良好ですが、さらなる改善が可能です。")
     else:
         print(f"\n✅ データ整合性は良好です。")
