@@ -201,3 +201,67 @@ class PRCollector:
             time.sleep(self.api_config.get("request_delay", 0.5))
             
         return collected_count
+        
+    def get_missing_pr_numbers(self, output_dir=None):
+        """ローカルに存在しない（欠損している）PR番号のリストを取得する"""
+        url = f"{self.api_base_url}/repos/{self.repo_owner}/{self.repo_name}/pulls"
+        params = {
+            "state": "all",
+            "sort": "created", 
+            "direction": "desc",
+            "per_page": 1
+        }
+        
+        latest_prs = make_github_api_request(url, params)
+        if not latest_prs:
+            return []
+            
+        latest_pr_number = latest_prs[0]["number"]
+        
+        local_pr_numbers = set()
+        if output_dir:
+            prs_dir = Path(output_dir)
+        else:
+            prs_dir = self.base_dir
+            
+        for json_file in prs_dir.glob("*.json"):
+            if json_file.name != "last_run_info.json":
+                try:
+                    pr_number = int(json_file.stem)
+                    local_pr_numbers.add(pr_number)
+                except ValueError:
+                    continue
+        
+        expected_range = set(range(1, latest_pr_number + 1))
+        missing_numbers = expected_range - local_pr_numbers
+        
+        return sorted(missing_numbers)
+    
+    def collect_uncollected_prs(self, output_dir=None, max_count=None):
+        """未収集のPRを優先的に収集する"""
+        missing_numbers = self.get_missing_pr_numbers(output_dir)
+        
+        if not missing_numbers:
+            print("未収集のPRはありません")
+            return 0
+            
+        print(f"未収集PR数: {len(missing_numbers):,}件")
+        
+        collected_count = 0
+        for pr_number in missing_numbers:
+            remaining, reset_time = check_rate_limit()
+            if remaining < 10:
+                wait_for_rate_limit_reset(reset_time)
+                
+            pr_data = self.collect_pr_data(pr_number)
+            if pr_data:
+                self.save_pr_data(pr_data, output_dir)
+                collected_count += 1
+                
+            if max_count and collected_count >= max_count:
+                print(f"指定された最大数 {max_count} に達したため収集を終了します")
+                break
+                
+            time.sleep(self.api_config.get("request_delay", 0.5))
+            
+        return collected_count
