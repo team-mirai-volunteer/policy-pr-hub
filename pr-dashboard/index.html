@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>チームみらい PR可視化ダッシュボード</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Meiryo UI', 'メイリオ', Arial, sans-serif;
+            background: #fafafa;
+            color: #333;
+        }
+        
+        .header {
+            background: #30bca7;
+            color: white;
+            padding: 20px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .control-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .control-panel h3 {
+            color: #30bca7;
+            margin-bottom: 15px;
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            margin-bottom: 15px;
+        }
+        
+        .filter-group {
+            min-width: 180px;
+        }
+        
+        .filter-group label {
+            display: block;
+            font-weight: bold;
+            color: #1a8b7a;
+            margin-bottom: 5px;
+        }
+        
+        select, input[type="text"] {
+            padding: 6px 10px;
+            border: 1px solid #30bca7;
+            border-radius: 4px;
+            width: 100%;
+            font-size: 14px;
+        }
+        
+        button {
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #30bca7;
+            color: white;
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: #1a8b7a;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #30bca7;
+            border: 1px solid #30bca7;
+        }
+        
+        .btn-secondary:hover {
+            background: #f0f0f0;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+        }
+        
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: normal;
+            color: #1a8b7a;
+        }
+        
+        .main-chart {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        
+        .stats-panel h4 {
+            color: #30bca7;
+            margin-bottom: 15px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        
+        .stat-card h5 {
+            color: #1a8b7a;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        #message {
+            margin: 10px 0;
+            font-weight: bold;
+            color: #1a8b7a;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>チームみらい GitHub プルリクエスト可視化ダッシュボード</h1>
+            <p>詳細フラグ・多軸分析・優先度フィルタ対応</p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- ローディング表示 -->
+        <div class="loading" id="loading">
+            データを読み込み中...
+        </div>
+        
+        <!-- コントロールパネル -->
+        <div class="control-panel" id="controlPanel" style="display: none;">
+            <h3>フィルタ設定</h3>
+            
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>ラベル:</label>
+                    <select id="labelSelect">
+                        <option value="ALL">すべて表示</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group" id="categoryGroup" style="display: none;">
+                    <label>カテゴリ:</label>
+                    <select id="categorySelect">
+                        <option value="ALL">すべて表示</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group" id="priorityGroup" style="display: none;">
+                    <label>優先度:</label>
+                    <select id="prioritySelect">
+                        <option value="ALL">すべて表示</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>キーワード検索:</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="searchInput" placeholder="本文内キーワード検索" style="width: 200px;">
+                        <button class="btn-primary" onclick="applyFilters()">検索</button>
+                        <button class="btn-secondary" onclick="clearFilters()">クリア</button>
+                    </div>
+                </div>
+                
+                <div class="filter-group" id="flagGroup" style="display: none;">
+                    <label>重要フラグ:</label>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" value="attention_high"> 要注意
+                        </label>
+                        <label>
+                            <input type="checkbox" value="strong"> 強い意見
+                        </label>
+                        <label>
+                            <input type="checkbox" value="extreme"> 極端
+                        </label>
+                        <label>
+                            <input type="checkbox" value="review_needed"> レビュー必要
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- メイン散布図 -->
+        <div class="main-chart" id="mainChart" style="display: none;">
+            <div id="scatter" style="height: 600px;"></div>
+        </div>
+        
+        <!-- 統計情報パネル -->
+        <div class="stats-panel" id="statsPanel" style="display: none;">
+            <h4>📊 データ統計</h4>
+            <div class="stats-grid" id="statsGrid"></div>
+        </div>
+        
+        <div id="message"></div>
+    </div>
+    
+    <!-- データファイルを読み込む -->
+    <script src="pr_data.js"></script>
+    
+    <!-- メインのJavaScript -->
+    <script>
+        // グローバル変数
+        let originalData = [];
+        let filteredData = [];
+        let labels = [];
+        let categories = [];
+        let priorities = [];
+        let flagColumns = [];
+        
+        // カラーパレット
+        const LABEL_COLORS = [
+            "#FF6B6B", "#FF9671", "#FF793F", "#FF4F4F",
+            "#FFD93D", "#FFC145", "#FFA600", "#FFC75F", 
+            "#6BCB77", "#7DDA71", "#52B788", "#3AD29F",
+            "#4D96FF", "#5AA8FF", "#0073E6", "#0096C7",
+            "#F16BB3", "#D95ED5"
+        ];
+        
+        const EXTRA_COLORS = [
+            "#B455C0", "#8E3BBA", "#00C2D1", "#14DADB", 
+            "#02C39A", "#009D9A", "#F94144", "#F3722C", 
+            "#F9C80E", "#B5179E", "#7209B7", "#4361EE", 
+            "#3A86FF", "#2C7BE5", "#80ED99"
+        ];
+        
+        const ALL_COLORS = LABEL_COLORS.concat(EXTRA_COLORS);
+        
+        // マッピング
+        const stanceMap = {
+            '-5': "強く反対", '-4': "反対", '-3': "やや反対", '-2': "少し反対", '-1': "微反対",
+            '0': "中立",
+            '1': "微賛成", '2': "少し賛成", '3': "やや賛成", '4': "賛成", '5': "強く賛成"
+        };
+        
+        const assertMap = {
+            '-5': "非常に弱い", '-4': "弱い", '-3': "やや弱い", '-2': "少し弱い", '-1': "微弱",
+            '0': "普通",
+            '1': "微強", '2': "少し強い", '3': "やや強い", '4': "強い", '5': "非常に強い"
+        };
+        
+        // ページ読み込み時の処理
+        window.addEventListener('DOMContentLoaded', function() {
+            // PR_DATAが定義されているか確認
+            if (typeof PR_DATA !== 'undefined' && PR_DATA.length > 0) {
+                console.log('データ件数:', PR_DATA.length);
+                processData(PR_DATA);
+                document.getElementById('loading').style.display = 'none';
+            } else {
+                document.getElementById('loading').innerHTML = 
+                    '<p style="color: red;">データが見つかりません。<br>pr_data.jsファイルを確認してください。</p>';
+            }
+        });
+        
+        function processData(data) {
+            originalData = data;
+            
+            // データ前処理
+            originalData.forEach(row => {
+                row.stance_val = parseInt(row.stance_val) || 0;
+                row.assert_val = parseInt(row.assert_val) || 0;
+                row.stance_lbl = stanceMap[row.stance_val] || "中立";
+                row.assert_lbl = assertMap[row.assert_val] || "普通";
+                
+                // ジッター追加
+                row.stance_j = row.stance_val + adaptiveJitter(row.stance_val);
+                row.assert_j = row.assert_val + adaptiveJitter(row.assert_val);
+            });
+            
+            // ユニーク値の取得
+            labels = [...new Set(originalData.map(d => d.label).filter(Boolean))].sort();
+            categories = [...new Set(originalData.map(d => d.category).filter(Boolean))].sort();
+            priorities = [...new Set(originalData.map(d => d.priority).filter(Boolean))].sort();
+            
+            // フラグ列の検出
+            flagColumns = Object.keys(originalData[0] || {}).filter(col => col.startsWith('flag_'));
+            
+            console.log('ラベル数:', labels.length);
+            console.log('カテゴリ数:', categories.length);
+            console.log('優先度数:', priorities.length);
+            console.log('フラグ列:', flagColumns);
+            
+            // UI初期化
+            initializeUI();
+            
+            // 初期表示
+            filteredData = [...originalData];
+            updateVisualization();
+        }
+        
+        function adaptiveJitter(value) {
+            const distance = Math.abs(value);
+            let jitterAmount = 0.15;
+            
+            if (distance <= 1) {
+                jitterAmount *= 3;
+            } else if (distance <= 2) {
+                jitterAmount *= 2;
+            }
+            
+            return (Math.random() - 0.5) * 2 * jitterAmount;
+        }
+        
+        function initializeUI() {
+            // 表示制御
+            document.getElementById('controlPanel').style.display = 'block';
+            document.getElementById('mainChart').style.display = 'block';
+            document.getElementById('statsPanel').style.display = 'block';
+            
+            // ラベル選択肢
+            const labelSelect = document.getElementById('labelSelect');
+            labelSelect.innerHTML = '<option value="ALL">すべて表示</option>';
+            labels.forEach(label => {
+                const option = document.createElement('option');
+                option.value = label;
+                option.textContent = label;
+                labelSelect.appendChild(option);
+            });
+            
+            // カテゴリ選択肢
+            if (categories.length > 0) {
+                document.getElementById('categoryGroup').style.display = 'block';
+                const categorySelect = document.getElementById('categorySelect');
+                categorySelect.innerHTML = '<option value="ALL">すべて表示</option>';
+                categories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat;
+                    option.textContent = cat;
+                    categorySelect.appendChild(option);
+                });
+            }
+            
+            // 優先度選択肢
+            if (priorities.length > 0) {
+                document.getElementById('priorityGroup').style.display = 'block';
+                const prioritySelect = document.getElementById('prioritySelect');
+                prioritySelect.innerHTML = '<option value="ALL">すべて表示</option>';
+                priorities.forEach(pri => {
+                    const option = document.createElement('option');
+                    option.value = pri;
+                    option.textContent = pri;
+                    prioritySelect.appendChild(option);
+                });
+            }
+            
+            // フラグチェックボックス
+            if (flagColumns.length > 0) {
+                document.getElementById('flagGroup').style.display = 'block';
+            }
+        }
+        
+        function applyFilters() {
+            filteredData = [...originalData];
+            
+            // ラベルフィルタ
+            const labelValue = document.getElementById('labelSelect').value;
+            if (labelValue !== 'ALL') {
+                filteredData = filteredData.filter(d => d.label === labelValue);
+            }
+            
+            // カテゴリフィルタ
+            const categoryValue = document.getElementById('categorySelect').value;
+            if (categoryValue !== 'ALL') {
+                filteredData = filteredData.filter(d => d.category === categoryValue);
+            }
+            
+            // 優先度フィルタ
+            const priorityValue = document.getElementById('prioritySelect').value;
+            if (priorityValue !== 'ALL') {
+                filteredData = filteredData.filter(d => d.priority === priorityValue);
+            }
+            
+            // キーワードフィルタ
+            const keyword = document.getElementById('searchInput').value;
+            if (keyword) {
+                filteredData = filteredData.filter(d => 
+                    d.body && d.body.toLowerCase().includes(keyword.toLowerCase())
+                );
+            }
+            
+            // フラグフィルタ
+            const checkedFlags = Array.from(document.querySelectorAll('#flagGroup input:checked'))
+                .map(cb => cb.value);
+            checkedFlags.forEach(flag => {
+                const flagCol = `flag_${flag}`;
+                filteredData = filteredData.filter(d => d[flagCol]);
+            });
+            
+            updateVisualization();
+        }
+        
+        function clearFilters() {
+            document.getElementById('labelSelect').value = 'ALL';
+            if (document.getElementById('categorySelect')) {
+                document.getElementById('categorySelect').value = 'ALL';
+            }
+            if (document.getElementById('prioritySelect')) {
+                document.getElementById('prioritySelect').value = 'ALL';
+            }
+            document.getElementById('searchInput').value = '';
+            document.querySelectorAll('#flagGroup input').forEach(cb => cb.checked = false);
+            
+            filteredData = [...originalData];
+            updateVisualization();
+        }
+        
+        function updateVisualization() {
+            updateScatterPlot();
+            updateStats();
+            
+            const message = filteredData.length > 0 
+                ? `📊 ${filteredData.length}件のデータを表示中（全体: ${originalData.length}件）`
+                : 'フィルタ条件に該当するデータがありません';
+            document.getElementById('message').textContent = message;
+        }
+        
+        function updateScatterPlot() {
+            if (filteredData.length === 0) {
+                Plotly.newPlot('scatter', [], {
+                    xaxis: {visible: false},
+                    yaxis: {visible: false},
+                    annotations: [{
+                        text: 'データがありません',
+                        xref: 'paper',
+                        yref: 'paper',
+                        x: 0.5,
+                        y: 0.5,
+                        showarrow: false,
+                        font: {size: 16, color: 'gray'}
+                    }]
+                });
+                return;
+            }
+            
+            // ラベルごとにデータを分割
+            const traces = [];
+            const labelColorMap = {};
+            
+            labels.forEach((label, i) => {
+                labelColorMap[label] = ALL_COLORS[i % ALL_COLORS.length];
+            });
+            
+            labels.forEach(label => {
+                const labelData = filteredData.filter(d => d.label === label);
+                if (labelData.length === 0) return;
+                
+                const trace = {
+                    x: labelData.map(d => d.stance_j),
+                    y: labelData.map(d => d.assert_j),
+                    mode: 'markers',
+                    type: 'scatter',
+                    name: label,
+                    marker: {
+                        size: 10,
+                        color: labelColorMap[label],
+                        line: {width: 1, color: 'white'},
+                        opacity: 0.8
+                    },
+                    text: labelData.map(d => {
+                        let text = `スタンス: ${d.stance_lbl}<br>主張強度: ${d.assert_lbl}`;
+                        if (d.subject) text += `<br>件名: ${d.subject}`;
+                        if (d.category) text += `<br>カテゴリ: ${d.category}`;
+                        if (d.priority) text += `<br>優先度: ${d.priority}`;
+                        return text;
+                    }),
+                    hoverinfo: 'text',
+                    customdata: labelData.map(d => d.link)
+                };
+                traces.push(trace);
+            });
+            
+            const layout = {
+                title: 'スタンス vs 主張強度 分析（ラベル別色分け）',
+                xaxis: {
+                    title: 'スタンス（← 否定的 ／ 肯定的 →）',
+                    tickmode: 'array',
+                    tickvals: [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5],
+                    ticktext: Object.values(stanceMap),
+                    range: [-5.5, 5.5],
+                    zeroline: true,
+                    zerolinecolor: 'lightgray',
+                    zerolinewidth: 2
+                },
+                yaxis: {
+                    title: '主張の強さ（↓ 弱い ／ 強い ↑）',
+                    tickmode: 'array',
+                    tickvals: [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5],
+                    ticktext: Object.values(assertMap),
+                    range: [-5.5, 5.5],
+                    zeroline: true,
+                    zerolinecolor: 'lightgray',
+                    zerolinewidth: 2
+                },
+                plot_bgcolor: '#f8f9fa',
+                height: 550,
+                font: {family: 'Arial, Meiryo UI, sans-serif'},
+                shapes: [
+                    {type: 'line', x0: 0, x1: 0, y0: -5.5, y1: 5.5, 
+                     line: {color: 'gray', width: 2, dash: 'dash'}},
+                    {type: 'line', x0: -5.5, x1: 5.5, y0: 0, y1: 0, 
+                     line: {color: 'gray', width: 2, dash: 'dash'}}
+                ],
+                annotations: [
+                    {x: 2.5, y: 2.5, text: '肯定的・強い', showarrow: false, 
+                     font: {color: 'gray', size: 12}, opacity: 0.7},
+                    {x: -2.5, y: 2.5, text: '否定的・強い', showarrow: false, 
+                     font: {color: 'gray', size: 12}, opacity: 0.7},
+                    {x: 2.5, y: -2.5, text: '肯定的・弱い', showarrow: false, 
+                     font: {color: 'gray', size: 12}, opacity: 0.7},
+                    {x: -2.5, y: -2.5, text: '否定的・弱い', showarrow: false, 
+                     font: {color: 'gray', size: 12}, opacity: 0.7}
+                ]
+            };
+            
+            Plotly.newPlot('scatter', traces, layout);
+            
+            // クリックイベント
+            document.getElementById('scatter').on('plotly_click', function(data) {
+                if (data.points && data.points.length > 0) {
+                    const url = data.points[0].customdata;
+                    if (url && url !== 'None' && url.startsWith('http')) {
+                        window.open(url, '_blank');
+                    }
+                }
+            });
+        }
+        
+        function updateStats() {
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = '';
+            
+            // 基本情報
+            const basicStats = document.createElement('div');
+            basicStats.className = 'stat-card';
+            basicStats.innerHTML = `
+                <h5>基本情報</h5>
+                <p>総件数: ${filteredData.length}件</p>
+                <p>スタンス平均: ${calculateAverage(filteredData, 'stance_val').toFixed(2)}</p>
+                <p>主張強度平均: ${calculateAverage(filteredData, 'assert_val').toFixed(2)}</p>
+            `;
+            statsGrid.appendChild(basicStats);
+            
+            // 象限分析
+            const quadrantStats = document.createElement('div');
+            quadrantStats.className = 'stat-card';
+            const positiveStrong = filteredData.filter(d => d.stance_val > 0 && d.assert_val > 0).length;
+            const negativeStrong = filteredData.filter(d => d.stance_val < 0 && d.assert_val > 0).length;
+            const neutralWeak = filteredData.filter(d => d.stance_val === 0 || d.assert_val <= 0).length;
+            quadrantStats.innerHTML = `
+                <h5>象限分析</h5>
+                <p>肯定的+強い: ${positiveStrong}件</p>
+                <p>否定的+強い: ${negativeStrong}件</p>
+                <p>中立・弱い: ${neutralWeak}件</p>
+            `;
+            statsGrid.appendChild(quadrantStats);
+            
+            // 重要フラグ統計
+            if (flagColumns.length > 0) {
+                const flagStats = document.createElement('div');
+                flagStats.className = 'stat-card';
+                let flagHTML = '<h5>重要フラグ</h5>';
+                
+                const flagNames = {
+                    'flag_attention_high': '要注意',
+                    'flag_strong_positive': '強い肯定',
+                    'flag_strong_negative': '強い否定',
+                    'flag_extreme': '極端',
+                    'flag_review_needed': 'レビュー必要'
+                };
+                
+                flagColumns.forEach(flag => {
+                    const count = filteredData.filter(d => d[flag]).length;
+                    const name = flagNames[flag] || flag.replace('flag_', '');
+                    flagHTML += `<p>${name}: ${count}件</p>`;
+                });
+                
+                flagStats.innerHTML = flagHTML;
+                statsGrid.appendChild(flagStats);
+            }
+        }
+        
+        function calculateAverage(data, field) {
+            if (data.length === 0) return 0;
+            const sum = data.reduce((acc, d) => acc + (d[field] || 0), 0);
+            return sum / data.length;
+        }
+    </script>
+</body>
+</html>
