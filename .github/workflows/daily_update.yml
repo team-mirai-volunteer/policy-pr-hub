@@ -64,30 +64,16 @@ jobs:
           python src/collectors/pr_collector_main.py --mode update --output-dir ../pr-data/prs
           echo "通常のPRデータ収集が完了しました"
 
-      - name: 欠損PRの補完収集
+      - name: 欠損PRの効率的な補完収集
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd policy-pr-hub
-          echo "=== 欠損PRの補完収集 ==="
+          echo "=== 欠損PRの効率的な補完収集 ==="
+          echo "既存ファイルをチェックして未収集のPRのみを処理します"
           
-          # 最新PR番号を取得
-          LATEST_PR=$(python -c "
-          import sys
-          sys.path.insert(0, '.')
-          from src.utils.github_api import make_github_api_request, load_config
-          config = load_config()
-          github_config = config['github']
-          url = f\"{github_config['api_base_url']}/repos/{github_config['repo_owner']}/{github_config['repo_name']}/pulls\"
-          params = {'state': 'all', 'sort': 'created', 'direction': 'desc', 'per_page': 1}
-          prs = make_github_api_request(url, params)
-          print(prs[0]['number'] if prs else 0)
-          ")
-          
-          echo "最新PR番号: $LATEST_PR"
-          
-          # 連番モードで欠損PRを収集
-          python src/collectors/pr_collector_main.py --mode sequential --start-number 1 --end-number $LATEST_PR --output-dir ../pr-data/prs
+          # 未収集PRを効率的に収集（既存ファイルをチェックして欠損分のみ処理）
+          python src/collectors/pr_collector_main.py --mode uncollected --output-dir ../pr-data/prs
           echo "欠損PRの補完収集が完了しました"
 
       - name: Issue/PR重複解決

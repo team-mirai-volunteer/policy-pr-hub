@@ -159,6 +159,16 @@ class PRCollector:
                 pr_number = pr["number"]
                 updated_at = pr["updated_at"]
                 
+                if output_dir:
+                    save_dir = Path(output_dir)
+                else:
+                    save_dir = self.base_dir
+                file_path = save_dir / f"{pr_number}.json"
+                
+                if file_path.exists():
+                    print(f"PR #{pr_number} は既に収集済みのためスキップします")
+                    continue
+                
                 if since and updated_at < since:
                     print(f"PR #{pr_number} は {since} より前に更新されているためスキップします")
                     continue
