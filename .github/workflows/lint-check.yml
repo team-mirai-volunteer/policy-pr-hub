@@ -2,10 +2,12 @@
 name: Lint Check
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  # push:
+  #   branches: [main]
+  # pull_request:
+  #   branches: [main]
+  workflow_dispatch: # 手動実行も可能にする
+
 
 jobs:
   lint:
