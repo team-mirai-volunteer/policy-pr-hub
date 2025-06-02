@@ -106,7 +106,10 @@ def main():
         
     elif args.mode == "uncollected":
         print("未収集のPRを優先的に収集します")
-        count = 0
+        count = collector.collect_uncollected_prs(
+            output_dir=output_dir,
+            max_count=args.max_count
+        )
         
     save_last_run_info(output_dir, args.mode, count)
     
