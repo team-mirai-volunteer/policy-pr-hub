@@ -6,7 +6,7 @@ github:
 
 data:
   storage_type: "file_per_pr"
-  base_dir: "/home/ubuntu/repos/pr-data/prs"
+  base_dir: "data/prs"
   reports_dir: "data/reports"
 
 analysis:

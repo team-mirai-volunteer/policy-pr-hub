@@ -34,7 +34,7 @@ def check_data_integrity(detailed=False, output_dir=None):
     github_stats = validator.get_github_pr_stats()
     
     print("ローカルデータを分析中...")
-    local_stats = validator.get_local_pr_stats("/home/ubuntu/pr-data")
+    local_stats = validator.get_local_pr_stats(config["data"]["base_dir"])
     
     print("データ比較を実行中...")
     comparison = validator.compare_stats(github_stats, local_stats)

@@ -92,7 +92,7 @@ python scripts/issue_pr_resolver.py --debug
 
 - **依存関係**: `src/utils/github_api.py`, `src/validators/data_validator.py`
 - **設定ファイル**: `config/settings.yaml`
-- **データソース**: `/home/ubuntu/pr-data/prs/`
+- **データソース**: `data/prs/` (設定ファイルで指定)
 - **API制限**: GitHub API rate limitに準拠
 
 ## 保守・更新
