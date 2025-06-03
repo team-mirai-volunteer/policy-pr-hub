@@ -170,7 +170,18 @@ jobs:
           else
             timestamp=$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S JST')
             git commit -m "PRデータとレポートの更新（改善版ワークフロー） - ${timestamp}"
-            git push
+            
+            # リモートの最新変更を取得してマージしてからプッシュ
+            echo "リモートの最新変更を確認中..."
+            git fetch origin main
+            
+            # リモートに新しいコミットがある場合はマージ
+            if ! git diff --quiet HEAD origin/main; then
+              echo "リモートに新しい変更があります。マージを実行します..."
+              git merge origin/main --no-edit --strategy-option=ours
+            fi
+            
+            git push origin main
             echo "pr-dataリポジトリに変更をプッシュしました"
           fi
 
