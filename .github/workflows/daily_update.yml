@@ -184,30 +184,3 @@ jobs:
             git push origin main
             echo "pr-dataリポジトリに変更をプッシュしました"
           fi
-
-      - name: ワークフロー監視・診断
-        run: |
-          cd policy-pr-hub
-          echo "=== ワークフロー監視・診断 ==="
-          python scripts/workflow_monitor.py --report ../pr-data/reports/workflow_monitor.json
-
-      - name: 未収集優先モードのテスト実行
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cd policy-pr-hub
-          echo "=== 未収集優先モードのテスト ==="
-          python src/collectors/pr_collector_main.py --mode uncollected --max-count 5 --output-dir ../pr-data/prs
-          echo "未収集優先モードのテスト完了"
-
-      - name: 実行サマリーの出力
-        run: |
-          echo "=== 日次PRデータ更新完了（改善版v2） ==="
-          echo "✅ データ整合性チェック完了"
-          echo "✅ 欠損PR分析・補完完了"
-          echo "✅ Issue/PR重複解決完了"
-          echo "✅ 政策レポート生成完了"
-          echo "✅ セクション分析レポート生成完了"
-          echo "✅ ワークフロー監視・診断完了"
-          echo "✅ 未収集優先モード実装完了"
-          echo "✅ データ品質監視完了"

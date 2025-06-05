@@ -6,8 +6,8 @@ github:
 
 data:
   storage_type: "file_per_pr"
-  base_dir: "data/prs"
-  reports_dir: "data/reports"
+  base_dir: "../../pr-data/prs"
+  reports_dir: "../../pr-data/reports"
 
 analysis:
   focus_areas: ["policy_sections", "improvement_proposals", "citizen_feedback"]
