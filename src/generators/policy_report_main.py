@@ -18,31 +18,25 @@ from src.generators.policy_report import PolicyReportGenerator
 def parse_args():
     """コマンドライン引数をパースする"""
     parser = argparse.ArgumentParser(description="政策レポートを生成するスクリプト")
-    
+
+    parser.add_argument("--input", required=True, help="PRデータのディレクトリ")
+
     parser.add_argument(
-        "--input",
-        required=True,
-        help="PRデータのディレクトリ"
+        "--output-dir", required=True, help="レポート出力先ディレクトリ"
     )
-    
-    parser.add_argument(
-        "--output-dir",
-        required=True,
-        help="レポート出力先ディレクトリ"
-    )
-    
+
     return parser.parse_args()
 
 
 def main():
     """メイン関数"""
     args = parse_args()
-    
+
     os.makedirs(args.output_dir, exist_ok=True)
-    
+
     generator = PolicyReportGenerator()
     success = generator.generate_reports(args.input, args.output_dir)
-    
+
     if success:
         print(f"レポートを {args.output_dir} に生成しました")
         return 0

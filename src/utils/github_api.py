@@ -26,13 +26,15 @@ def get_github_token():
     """環境変数からGitHubトークンを取得する"""
     config = load_config()
     token_env_var = config["github"]["token_env_var"]
-    
+
     token = os.environ.get(token_env_var)
     if not token:
         try:
             import subprocess
 
-            result = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True)
+            result = subprocess.run(
+                ["gh", "auth", "token"], capture_output=True, text=True
+            )
             if result.returncode == 0:
                 token = result.stdout.strip()
         except Exception as e:
@@ -57,7 +59,8 @@ def get_headers():
     max_tries=5,
     max_time=30,
     giveup=lambda e: isinstance(e, requests.exceptions.HTTPError)
-    and e.response.status_code in [401, 403, 404],  # 認証エラーやリソースが存在しない場合は再試行しない
+    and e.response.status_code
+    in [401, 403, 404],  # 認証エラーやリソースが存在しない場合は再試行しない
 )
 def make_github_api_request(url, params=None, headers=None):
     """GitHubのAPIリクエストを実行し、再試行ロジックを適用する"""
@@ -78,7 +81,7 @@ def check_rate_limit():
     """GitHub APIのレート制限状況を確認する"""
     config = load_config()
     api_base_url = config["github"]["api_base_url"]
-    
+
     url = f"{api_base_url}/rate_limit"
     response = requests.get(url, headers=get_headers())
     response.raise_for_status()
@@ -91,7 +94,9 @@ def check_rate_limit():
     now = datetime.datetime.now()
 
     print(f"API制限: 残り {remaining} リクエスト")
-    print(f"制限リセット時間: {reset_time} (あと {(reset_time - now).total_seconds() / 60:.1f} 分)")
+    print(
+        f"制限リセット時間: {reset_time} (あと {(reset_time - now).total_seconds() / 60:.1f} 分)"
+    )
 
     return remaining, reset_time
 
@@ -100,10 +105,10 @@ def wait_for_rate_limit_reset(reset_time, buffer_seconds=5):
     """レート制限のリセット時間まで待機する"""
     now = datetime.datetime.now()
     wait_seconds = (reset_time - now).total_seconds() + buffer_seconds
-    
+
     if wait_seconds > 0:
         print(f"レート制限に達しました。{wait_seconds:.1f}秒待機します...")
         time.sleep(wait_seconds)
         return True
-    
+
     return False
