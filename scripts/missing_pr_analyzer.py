@@ -32,6 +32,8 @@ def analyze_missing_prs(verbose=False):
     repo_name = github_config["repo_name"]
     api_base_url = github_config["api_base_url"]
 
+    known_issue_numbers = {181, 182, 194, 215, 802, 931, 1803}
+
     print("GitHubから最新PR番号を取得中...")
 
     url = f"{api_base_url}/repos/{repo_owner}/{repo_name}/pulls"
@@ -61,13 +63,15 @@ def analyze_missing_prs(verbose=False):
     print(f"ローカル総PR数: {len(local_pr_numbers):,}件")
 
     expected_range = set(range(1, latest_pr_number + 1))
-    missing_numbers = expected_range - local_pr_numbers
+    missing_numbers = expected_range - local_pr_numbers - known_issue_numbers
 
     print(f"\n=== 連番欠損分析 ===")
     print(f"期待される総PR数: {len(expected_range):,}件 (1-{latest_pr_number})")
+    print(f"既知のIssue数: {len(known_issue_numbers):,}件")
     print(f"実際のローカルPR数: {len(local_pr_numbers):,}件")
     print(f"欠損PR数: {len(missing_numbers):,}件")
-    print(f"カバレッジ: {(len(local_pr_numbers) / len(expected_range) * 100):.1f}%")
+    effective_pr_range = len(expected_range) - len(known_issue_numbers)
+    print(f"カバレッジ: {(len(local_pr_numbers) / effective_pr_range * 100):.1f}%")
 
     if missing_numbers:
         missing_sorted = sorted(missing_numbers)

@@ -214,6 +214,8 @@ class PRCollector:
         
     def get_missing_pr_numbers(self, output_dir=None):
         """ローカルに存在しない（欠損している）PR番号のリストを取得する"""
+        known_issue_numbers = {181, 182, 194, 215, 802, 931, 1803}
+        
         url = f"{self.api_base_url}/repos/{self.repo_owner}/{self.repo_name}/pulls"
         params = {
             "state": "all",
@@ -243,7 +245,7 @@ class PRCollector:
                     continue
         
         expected_range = set(range(1, latest_pr_number + 1))
-        missing_numbers = expected_range - local_pr_numbers
+        missing_numbers = expected_range - local_pr_numbers - known_issue_numbers
         
         return sorted(missing_numbers)
     
