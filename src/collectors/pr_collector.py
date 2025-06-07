@@ -216,6 +216,14 @@ class PRCollector:
         """ローカルに存在しない（欠損している）PR番号のリストを取得する"""
         known_issue_numbers = {181, 182, 194, 215, 802, 931, 1803}
         
+        if output_dir:
+            prs_dir = Path(output_dir)
+        else:
+            prs_dir = self.base_dir
+            
+        from ..utils.github_api import get_max_pr_number_from_local_data
+        local_max_pr = get_max_pr_number_from_local_data(prs_dir)
+        
         url = f"{self.api_base_url}/repos/{self.repo_owner}/{self.repo_name}/pulls"
         params = {
             "state": "all",
@@ -226,16 +234,14 @@ class PRCollector:
         
         latest_prs = make_github_api_request(url, params)
         if not latest_prs:
-            return []
-            
-        latest_pr_number = latest_prs[0]["number"]
+            if local_max_pr:
+                latest_pr_number = local_max_pr
+            else:
+                return []
+        else:
+            latest_pr_number = latest_prs[0]["number"]
         
         local_pr_numbers = set()
-        if output_dir:
-            prs_dir = Path(output_dir)
-        else:
-            prs_dir = self.base_dir
-            
         for json_file in prs_dir.glob("*.json"):
             if json_file.name != "last_run_info.json":
                 try:
