@@ -20,7 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.utils.github_api import make_github_api_request, load_config
+from src.utils.github_api import make_github_api_request, load_config, get_max_pr_number_from_local_data
 
 
 def analyze_missing_prs(verbose=False):
@@ -32,24 +32,15 @@ def analyze_missing_prs(verbose=False):
     repo_name = github_config["repo_name"]
     api_base_url = github_config["api_base_url"]
 
-    print("GitHubから最新PR番号を取得中...")
-
-    url = f"{api_base_url}/repos/{repo_owner}/{repo_name}/pulls"
-    params = {"state": "all", "sort": "created", "direction": "desc", "per_page": 1}
-
-    latest_prs = make_github_api_request(url, params)
-    if not latest_prs:
-        print("エラー: PRを取得できませんでした")
-        return
-
-    latest_pr_number = latest_prs[0]["number"]
-    print(f"GitHub最新PR番号: #{latest_pr_number}")
+    known_issue_numbers = {181, 182, 194, 215, 802, 931, 1803}
 
     print("ローカルPRファイルを確認中...")
-
+    
     local_pr_numbers = set()
     prs_dir = Path(config["data"]["base_dir"])
-
+    
+    local_max_pr = get_max_pr_number_from_local_data(prs_dir)
+    
     for json_file in prs_dir.glob("*.json"):
         if json_file.name != "last_run_info.json":
             try:
@@ -59,15 +50,38 @@ def analyze_missing_prs(verbose=False):
                 continue
 
     print(f"ローカル総PR数: {len(local_pr_numbers):,}件")
+    
+    if local_max_pr:
+        print(f"ローカル最大PR番号: #{local_max_pr}")
+        print("GitHubから最新PR番号を確認中...")
+    else:
+        print("GitHubから最新PR番号を取得中...")
+
+    url = f"{api_base_url}/repos/{repo_owner}/{repo_name}/pulls"
+    params = {"state": "all", "sort": "created", "direction": "desc", "per_page": 1}
+
+    latest_prs = make_github_api_request(url, params)
+    if not latest_prs:
+        if local_max_pr:
+            print(f"APIエラーのため、ローカル最大PR番号 #{local_max_pr} を使用します")
+            latest_pr_number = local_max_pr
+        else:
+            print("エラー: PRを取得できませんでした")
+            return
+    else:
+        latest_pr_number = latest_prs[0]["number"]
+        print(f"GitHub最新PR番号: #{latest_pr_number}")
 
     expected_range = set(range(1, latest_pr_number + 1))
-    missing_numbers = expected_range - local_pr_numbers
+    missing_numbers = expected_range - local_pr_numbers - known_issue_numbers
 
     print(f"\n=== 連番欠損分析 ===")
     print(f"期待される総PR数: {len(expected_range):,}件 (1-{latest_pr_number})")
+    print(f"既知のIssue数: {len(known_issue_numbers):,}件")
     print(f"実際のローカルPR数: {len(local_pr_numbers):,}件")
     print(f"欠損PR数: {len(missing_numbers):,}件")
-    print(f"カバレッジ: {(len(local_pr_numbers) / len(expected_range) * 100):.1f}%")
+    effective_pr_range = len(expected_range) - len(known_issue_numbers)
+    print(f"カバレッジ: {(len(local_pr_numbers) / effective_pr_range * 100):.1f}%")
 
     if missing_numbers:
         missing_sorted = sorted(missing_numbers)
