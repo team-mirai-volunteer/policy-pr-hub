@@ -1,0 +1,54 @@
+name: 改善貢献PR統計の時間毎更新
+
+on:
+  schedule:
+    # 毎時0分に実行
+    - cron: "0 * * * *"
+  workflow_dispatch: # 手動実行も可能にする
+
+jobs:
+  update-contribution-stats:
+    runs-on: ubuntu-latest
+    steps:
+      - name: policy-pr-hubリポジトリのチェックアウト
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: policy-pr-hub
+
+      - name: Python環境のセットアップ
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: 依存関係のインストール
+        run: |
+          cd policy-pr-hub
+          pip install -r requirements.txt
+
+      - name: pr-dataリポジトリのチェックアウト（統計生成用）
+        uses: actions/checkout@v3
+        with:
+          repository: team-mirai-volunteer/pr-data
+          token: ${{ secrets.NISHIO_GITHUB_TOKEN }}
+          path: pr-data
+
+      - name: 改善貢献PR統計の生成
+        run: |
+          cd policy-pr-hub
+          echo "=== 改善貢献PR統計の生成 ==="
+          python src/generators/contribution_stats_main.py --input-dir ../pr-data/prs --output-file /tmp/contribution_stats.json
+          echo "改善貢献PR統計の生成が完了しました"
+
+      - name: 統計データのGistアップロード
+        env:
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+        run: |
+          cd policy-pr-hub
+          echo "=== 統計データのGistアップロード ==="
+          # 一時ファイルから統計データを読み込んでGistにアップロード
+          mkdir -p ../pr-data/reports
+          cp /tmp/contribution_stats.json ../pr-data/reports/contribution_stats.json
+          python upload_stats_to_gist.py
+          echo "Gistアップロードが完了しました"
