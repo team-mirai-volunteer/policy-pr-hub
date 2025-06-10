@@ -71,7 +71,7 @@ def main():
         return 1
     
     github_token = os.environ.get("GIST_TOKEN") or os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
-    gist_id = os.environ.get("GIST_ID")  # 既存のGist IDがあれば更新
+    gist_id = os.environ.get("GIST_ID") or "8fff86ad19bf1bbf4f8ff6b5a8405793"
     
     print("改善貢献PR統計データのGistアップロードを開始...")
     print(f"GitHub token available: {'Yes' if github_token else 'No'}")
