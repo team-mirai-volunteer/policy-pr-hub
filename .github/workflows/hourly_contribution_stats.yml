@@ -16,13 +16,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: policy-pr-hub
 
-      - name: pr-dataリポジトリのチェックアウト
-        uses: actions/checkout@v3
-        with:
-          repository: team-mirai-volunteer/pr-data
-          token: ${{ secrets.NISHIO_GITHUB_TOKEN }}
-          path: pr-data
-
       - name: Python環境のセットアップ
         uses: actions/setup-python@v4
         with:
@@ -34,11 +27,18 @@ jobs:
           cd policy-pr-hub
           pip install -r requirements.txt
 
+      - name: pr-dataリポジトリのチェックアウト（統計生成用）
+        uses: actions/checkout@v3
+        with:
+          repository: team-mirai-volunteer/pr-data
+          token: ${{ secrets.NISHIO_GITHUB_TOKEN }}
+          path: pr-data
+
       - name: 改善貢献PR統計の生成
         run: |
           cd policy-pr-hub
           echo "=== 改善貢献PR統計の生成 ==="
-          python src/generators/contribution_stats_main.py --input-dir ../pr-data/prs --output-file ../pr-data/reports/contribution_stats.json
+          python src/generators/contribution_stats_main.py --input-dir ../pr-data/prs --output-file /tmp/contribution_stats.json
           echo "改善貢献PR統計の生成が完了しました"
 
       - name: 統計データのGistアップロード
@@ -47,37 +47,8 @@ jobs:
         run: |
           cd policy-pr-hub
           echo "=== 統計データのGistアップロード ==="
+          # 一時ファイルから統計データを読み込んでGistにアップロード
+          mkdir -p ../pr-data/reports
+          cp /tmp/contribution_stats.json ../pr-data/reports/contribution_stats.json
           python upload_stats_to_gist.py
           echo "Gistアップロードが完了しました"
-
-      - name: pr-dataリポジトリの統計ファイル更新
-        run: |
-          cd pr-data
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
-          
-          # 統計レポートファイルの追加
-          if [ -f "reports/contribution_stats.json" ]; then
-            git add reports/contribution_stats.json
-          fi
-          
-          # 変更がある場合のみコミットする
-          if git diff --staged --quiet; then
-            echo "コミットする変更はありません"
-          else
-            timestamp=$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S JST')
-            git commit -m "改善貢献PR統計の時間毎更新 - ${timestamp}"
-            
-            # リモートの最新変更を取得してマージしてからプッシュ
-            echo "リモートの最新変更を確認中..."
-            git fetch origin main
-            
-            # リモートに新しいコミットがある場合はマージ
-            if ! git diff --quiet HEAD origin/main; then
-              echo "リモートに新しい変更があります。マージを実行します..."
-              git merge origin/main --no-edit --strategy-option=ours
-            fi
-            
-            git push origin main
-            echo "pr-dataリポジトリに統計更新をプッシュしました"
-          fi
