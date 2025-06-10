@@ -85,11 +85,16 @@ class ContributionStatsGenerator:
 
     def generate_json_stats(self, stats, output_file):
         """統計をJSON形式で出力する"""
+        daily_counts_array = [
+            {"date": date, "count": count}
+            for date, count in sorted(stats["daily_counts"].items())
+        ]
+        
         json_data = {
             "total_contribution_prs": stats["contribution_prs"],
             "merged_prs": stats["merged_prs"],
             "thankyou_closed_prs": stats["thankyou_closed_prs"],
-            "daily_counts": stats["daily_counts"],
+            "daily_counts": daily_counts_array,
             "generated_at": datetime.utcnow().isoformat() + "Z"
         }
 
