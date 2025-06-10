@@ -117,10 +117,10 @@ def wait_for_rate_limit_reset(reset_time, buffer_seconds=5):
 def get_max_pr_number_from_local_data(prs_dir_path):
     """既存のPRデータファイルから最大PR番号を取得する"""
     prs_dir = Path(prs_dir_path)
-    
+
     if not prs_dir.exists() or not prs_dir.is_dir():
         return None
-        
+
     max_pr_number = 0
     for json_file in prs_dir.glob("*.json"):
         if json_file.name != "last_run_info.json":
@@ -129,5 +129,5 @@ def get_max_pr_number_from_local_data(prs_dir_path):
                 max_pr_number = max(max_pr_number, pr_number)
             except ValueError:
                 continue
-                
+
     return max_pr_number if max_pr_number > 0 else None

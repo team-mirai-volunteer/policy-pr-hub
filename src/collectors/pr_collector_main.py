@@ -105,7 +105,7 @@ def main():
         collected_count, updated_count = collector.collect_prs_with_state_check(
             output_dir=output_dir,
             max_count=args.max_count,
-            check_recent_days=args.check_days
+            check_recent_days=args.check_days,
         )
         count = collected_count + updated_count
         print(f"新規収集: {collected_count}件, 状態更新: {updated_count}件")

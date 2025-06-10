@@ -228,15 +228,16 @@ class PRCollector:
     def get_missing_pr_numbers(self, output_dir=None):
         """ローカルに存在しない（欠損している）PR番号のリストを取得する"""
         known_issue_numbers = {181, 182, 194, 215, 802, 931, 1803}
-        
+
         if output_dir:
             prs_dir = Path(output_dir)
         else:
             prs_dir = self.base_dir
-            
+
         from ..utils.github_api import get_max_pr_number_from_local_data
+
         local_max_pr = get_max_pr_number_from_local_data(prs_dir)
-        
+
         url = f"{self.api_base_url}/repos/{self.repo_owner}/{self.repo_name}/pulls"
         params = {"state": "all", "sort": "created", "direction": "desc", "per_page": 1}
 
@@ -290,104 +291,109 @@ class PRCollector:
             time.sleep(self.api_config.get("request_delay", 0.5))
 
         return collected_count
-        
+
     def needs_state_update(self, pr_number, local_file_path):
         """PRの状態更新が必要かチェックする"""
         if not local_file_path.exists():
             return True
-        
+
         try:
-            with open(local_file_path, 'r', encoding='utf-8') as f:
+            with open(local_file_path, "r", encoding="utf-8") as f:
                 local_data = json.load(f)
-            
-            local_basic_info = local_data.get('basic_info', {})
-            local_updated_at = local_basic_info.get('updated_at')
-            local_state = local_basic_info.get('state')
-            local_merged_at = local_basic_info.get('merged_at')
-            
+
+            local_basic_info = local_data.get("basic_info", {})
+            local_updated_at = local_basic_info.get("updated_at")
+            local_state = local_basic_info.get("state")
+            local_merged_at = local_basic_info.get("merged_at")
+
             if not local_updated_at or not local_state:
                 print(f"PR #{pr_number} のローカルデータが不完全です")
                 return True
-            
+
             pr_details = self.get_pr_details(pr_number)
             if not pr_details:
                 return False
-            
-            github_updated_at = pr_details['updated_at']
-            github_state = pr_details['state']
-            github_merged_at = pr_details.get('merged_at')
-            
+
+            github_updated_at = pr_details["updated_at"]
+            github_state = pr_details["state"]
+            github_merged_at = pr_details.get("merged_at")
+
             state_changed = local_state != github_state
             updated_time_changed = local_updated_at != github_updated_at
             merged_status_changed = local_merged_at != github_merged_at
-            
+
             if state_changed or updated_time_changed or merged_status_changed:
-                print(f"PR #{pr_number} の状態変更を検出: {local_state} → {github_state}")
+                print(
+                    f"PR #{pr_number} の状態変更を検出: {local_state} → {github_state}"
+                )
                 return True
-            
+
             return False
-            
+
         except Exception as e:
             print(f"PR #{pr_number} の状態チェック中にエラーが発生しました: {e}")
             return True
-    
-    def collect_prs_with_state_check(self, output_dir=None, max_count=None, check_recent_days=30):
+
+    def collect_prs_with_state_check(
+        self, output_dir=None, max_count=None, check_recent_days=30
+    ):
         """状態変更をチェックしながらPRを収集する"""
         page = 1
         per_page = 100
         collected_count = 0
         updated_count = 0
-        
+
         cutoff_date = (datetime.now() - timedelta(days=check_recent_days)).isoformat()
-        
+
         print(f"=== PR状態更新チェック開始 ===")
         print(f"チェック対象期間: 最近{check_recent_days}日間")
         print(f"カットオフ日時: {cutoff_date}")
-        
+
         while True:
             remaining, reset_time = check_rate_limit()
             if remaining < 20:
                 print(f"Rate Limit残り{remaining}件のため待機中...")
                 wait_for_rate_limit_reset(reset_time)
-            
-            prs = self.get_pr_list(sort="updated", direction="desc", 
-                                  per_page=per_page, page=page)
-            
+
+            prs = self.get_pr_list(
+                sort="updated", direction="desc", per_page=per_page, page=page
+            )
+
             if not prs:
                 break
-                
+
             for pr in prs:
                 pr_number = pr["number"]
                 updated_at = pr["updated_at"]
-                
+
                 if updated_at < cutoff_date:
                     print(f"古いPR（{cutoff_date}以前）に到達したため終了")
                     return collected_count, updated_count
-                
+
                 if output_dir:
                     save_dir = Path(output_dir)
                 else:
                     save_dir = self.base_dir
                 file_path = save_dir / f"{pr_number}.json"
-                
+
                 if self.needs_state_update(pr_number, file_path):
                     print(f"PR #{pr_number} の状態更新を実行中...")
-                    
+
                     old_state = None
                     if file_path.exists():
                         try:
-                            with open(file_path, 'r', encoding='utf-8') as f:
+                            with open(file_path, "r", encoding="utf-8") as f:
                                 old_data = json.load(f)
-                            old_state = old_data.get('basic_info', {}).get('state')
+                            old_state = old_data.get("basic_info", {}).get("state")
                         except:
                             pass
-                    
+
                     pr_data = self.collect_pr_data(pr_number)
                     if pr_data:
                         self.save_pr_data(pr_data, output_dir)
-                        
-                        new_state = pr_data.get('basic_info', {}).get('state')
-                        
+
+                        new_state = pr_data.get("basic_info", {}).get("state")
+
                         if old_state is not None:
                             updated_count += 1
                             if old_state != new_state:
@@ -395,19 +401,19 @@ class PRCollector:
                         else:
                             collected_count += 1
                             print(f"  新規収集: {new_state}")
-                            
+
                     if max_count and (collected_count + updated_count) >= max_count:
                         print(f"指定された最大数 {max_count} に達したため終了")
                         return collected_count, updated_count
-                        
+
                     time.sleep(self.api_config.get("request_delay", 0.5))
                 else:
                     print(f"PR #{pr_number} は最新状態です")
-                    
+
             page += 1
-            
+
         print(f"=== PR状態更新チェック完了 ===")
         print(f"新規収集: {collected_count}件")
         print(f"状態更新: {updated_count}件")
-        
+
         return collected_count, updated_count
