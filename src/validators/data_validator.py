@@ -176,7 +176,7 @@ class DataValidator:
         comparison = {"summary": {}, "differences": {}, "recommendations": []}
 
         github_total = github_stats.get("total_prs", 0)
-        local_total = local_stats.get("total_prs", 0) + len(issues)
+        local_total = local_stats.get("total_prs", 0)
 
         comparison["summary"] = {
             "github_total_prs": github_total,
