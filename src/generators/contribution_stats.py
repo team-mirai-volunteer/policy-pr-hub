@@ -9,7 +9,7 @@ JSON形式で生成します。
 import json
 import os
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 
@@ -85,10 +85,22 @@ class ContributionStatsGenerator:
 
     def generate_json_stats(self, stats, output_file):
         """統計をJSON形式で出力する"""
-        daily_counts_array = [
-            {"date": date, "count": count}
-            for date, count in sorted(stats["daily_counts"].items())
-        ]
+        daily_counts = stats["daily_counts"]
+        
+        if daily_counts:
+            dates = sorted(daily_counts.keys())
+            start_date = datetime.strptime(dates[0], "%Y-%m-%d").date()
+            end_date = datetime.strptime(dates[-1], "%Y-%m-%d").date()
+            
+            daily_counts_array = []
+            current_date = start_date
+            while current_date <= end_date:
+                date_str = current_date.strftime("%Y-%m-%d")
+                count = daily_counts.get(date_str, 0)
+                daily_counts_array.append({"date": date_str, "count": count})
+                current_date += timedelta(days=1)
+        else:
+            daily_counts_array = []
         
         json_data = {
             "total_contribution_prs": stats["contribution_prs"],
