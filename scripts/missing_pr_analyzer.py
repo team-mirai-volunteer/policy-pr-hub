@@ -20,7 +20,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.utils.github_api import make_github_api_request, load_config, get_max_pr_number_from_local_data
+from src.utils.github_api import (
+    make_github_api_request,
+    load_config,
+    get_max_pr_number_from_local_data,
+)
 
 
 def analyze_missing_prs(verbose=False):
@@ -35,12 +39,12 @@ def analyze_missing_prs(verbose=False):
     known_issue_numbers = {181, 182, 194, 215, 802, 931, 1803}
 
     print("ローカルPRファイルを確認中...")
-    
+
     local_pr_numbers = set()
     prs_dir = Path(config["data"]["base_dir"])
-    
+
     local_max_pr = get_max_pr_number_from_local_data(prs_dir)
-    
+
     for json_file in prs_dir.glob("*.json"):
         if json_file.name != "last_run_info.json":
             try:
@@ -50,7 +54,7 @@ def analyze_missing_prs(verbose=False):
                 continue
 
     print(f"ローカル総PR数: {len(local_pr_numbers):,}件")
-    
+
     if local_max_pr:
         print(f"ローカル最大PR番号: #{local_max_pr}")
         print("GitHubから最新PR番号を確認中...")

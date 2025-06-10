@@ -24,9 +24,9 @@ def parse_args():
 
     parser.add_argument(
         "--mode",
-        choices=["update", "sequential", "uncollected"],
+        choices=["update", "sequential", "uncollected", "state_update"],
         default="update",
-        help="収集モード: update=更新時間順, sequential=連番, uncollected=未収集優先",
+        help="収集モード: update=更新時間順, sequential=連番, uncollected=未収集優先, state_update=状態更新チェック",
     )
 
     parser.add_argument("--output-dir", help="PRデータの保存先ディレクトリ")
@@ -44,6 +44,12 @@ def parse_args():
         help="指定した日時以降に更新されたPRのみを収集 (ISO形式: YYYY-MM-DDTHH:MM:SSZ)",
     )
 
+    parser.add_argument(
+        "--check-days",
+        type=int,
+        default=30,
+        help="状態更新チェック対象日数（state_updateモード用）",
+    )
     return parser.parse_args()
 
 
@@ -94,6 +100,15 @@ def main():
             output_dir=output_dir, max_count=args.max_count
         )
 
+    elif args.mode == "state_update":
+        print(f"最近{args.check_days}日間のPR状態更新をチェックします")
+        collected_count, updated_count = collector.collect_prs_with_state_check(
+            output_dir=output_dir,
+            max_count=args.max_count,
+            check_recent_days=args.check_days,
+        )
+        count = collected_count + updated_count
+        print(f"新規収集: {collected_count}件, 状態更新: {updated_count}件")
     save_last_run_info(output_dir, args.mode, count)
 
     print(f"収集完了: {count}件のPRデータを収集しました")
