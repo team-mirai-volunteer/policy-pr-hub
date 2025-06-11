@@ -57,18 +57,20 @@ class ContributionStatsGenerator:
                 continue
 
             basic_info = pr.get("basic_info", {})
-            
+
             merged_at = basic_info.get("merged_at")
             is_merged = merged_at is not None
-            
+
             state = basic_info.get("state")
             closed_at = basic_info.get("closed_at")
             labels = pr.get("labels", [])
             has_thankyou = any(label.get("name") == "thankyou" for label in labels)
-            is_thankyou_closed = (state == "closed" and closed_at is not None and has_thankyou)
-            
+            is_thankyou_closed = (
+                state == "closed" and closed_at is not None and has_thankyou
+            )
+
             is_contribution = is_merged or is_thankyou_closed
-            
+
             if is_contribution:
                 stats["contribution_prs"] += 1
                 if is_merged:
@@ -77,7 +79,7 @@ class ContributionStatsGenerator:
                 else:
                     stats["thankyou_closed_prs"] += 1
                     date_str = closed_at[:10]
-                
+
                 stats["daily_counts"][date_str] += 1
 
         stats["daily_counts"] = dict(stats["daily_counts"])
@@ -86,12 +88,12 @@ class ContributionStatsGenerator:
     def generate_json_stats(self, stats, output_file):
         """統計をJSON形式で出力する"""
         daily_counts = stats["daily_counts"]
-        
+
         if daily_counts:
             dates = sorted(daily_counts.keys())
             start_date = datetime.strptime(dates[0], "%Y-%m-%d").date()
             end_date = datetime.strptime(dates[-1], "%Y-%m-%d").date()
-            
+
             daily_counts_array = []
             current_date = start_date
             while current_date <= end_date:
@@ -101,13 +103,13 @@ class ContributionStatsGenerator:
                 current_date += timedelta(days=1)
         else:
             daily_counts_array = []
-        
+
         json_data = {
             "total_contribution_prs": stats["contribution_prs"],
             "merged_prs": stats["merged_prs"],
             "thankyou_closed_prs": stats["thankyou_closed_prs"],
             "daily_counts": daily_counts_array,
-            "generated_at": datetime.utcnow().isoformat() + "Z"
+            "generated_at": datetime.utcnow().isoformat() + "Z",
         }
 
         output_path = Path(output_file)
@@ -129,7 +131,7 @@ class ContributionStatsGenerator:
             return False
 
         stats = self.analyze_contribution_prs(pr_data)
-        
+
         print(f"\n=== 統計結果 ===")
         print(f"総PR数: {stats['total_prs']}")
         print(f"改善貢献PR数: {stats['contribution_prs']}")
@@ -138,6 +140,6 @@ class ContributionStatsGenerator:
         print(f"日別統計件数: {len(stats['daily_counts'])}日分")
 
         json_data = self.generate_json_stats(stats, output_file)
-        
+
         print("改善貢献PR統計の生成が完了しました")
         return json_data

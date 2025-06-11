@@ -9,6 +9,7 @@ import requests
 from datetime import datetime, timezone
 from pathlib import Path
 
+
 def upload_to_gist(json_data, github_token, gist_id=None):
     """
     JSONデータをGitHub Gistにアップロードする
@@ -19,20 +20,18 @@ def upload_to_gist(json_data, github_token, gist_id=None):
 
     headers = {
         "Authorization": f"token {github_token}",
-        "Accept": "application/vnd.github.v3+json"
+        "Accept": "application/vnd.github.v3+json",
     }
 
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     filename = "contribution_stats.json"
-    
+
     gist_data = {
         "description": f"改善貢献PR統計データ - {timestamp}",
         "public": False,
         "files": {
-            filename: {
-                "content": json.dumps(json_data, ensure_ascii=False, indent=2)
-            }
-        }
+            filename: {"content": json.dumps(json_data, ensure_ascii=False, indent=2)}
+        },
     }
 
     try:
@@ -54,29 +53,34 @@ def upload_to_gist(json_data, github_token, gist_id=None):
         print(f"Error uploading to Gist: {e}")
         return None
 
+
 def main():
     json_file_path = Path("../pr-data/reports/contribution_stats.json")
-    
+
     if not json_file_path.exists():
         print(f"統計JSONファイルが見つかりません: {json_file_path}")
         return 1
-    
+
     try:
-        with open(json_file_path, 'r', encoding='utf-8') as f:
+        with open(json_file_path, "r", encoding="utf-8") as f:
             json_data = json.load(f)
         print(f"統計データを読み込みました: {json_file_path}")
         print(f"改善貢献PR数: {json_data.get('total_contribution_prs', 0)}")
     except Exception as e:
         print(f"JSONファイルの読み込みエラー: {e}")
         return 1
-    
-    github_token = os.environ.get("GIST_TOKEN") or os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+
+    github_token = (
+        os.environ.get("GIST_TOKEN")
+        or os.environ.get("GITHUB_TOKEN")
+        or os.environ.get("GH_TOKEN")
+    )
     gist_id = os.environ.get("GIST_ID") or "8fff86ad19bf1bbf4f8ff6b5a8405793"
-    
+
     print("改善貢献PR統計データのGistアップロードを開始...")
     print(f"GitHub token available: {'Yes' if github_token else 'No'}")
     print(f"Gist ID available: {'Yes' if gist_id else 'No'}")
-    
+
     if github_token:
         result = upload_to_gist(json_data, github_token, gist_id)
         if result:
@@ -90,6 +94,7 @@ def main():
         print("GitHub tokenが見つかりません。")
         print("GITHUB_TOKEN または GH_TOKEN 環境変数を設定してください。")
         return 1
+
 
 if __name__ == "__main__":
     exit(main())
