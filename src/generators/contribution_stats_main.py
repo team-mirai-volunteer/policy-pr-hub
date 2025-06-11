@@ -14,18 +14,16 @@ from src.generators.contribution_stats import ContributionStatsGenerator
 
 def main():
     """メイン関数"""
-    parser = argparse.ArgumentParser(
-        description="改善貢献PR統計をJSON形式で生成します"
-    )
+    parser = argparse.ArgumentParser(description="改善貢献PR統計をJSON形式で生成します")
     parser.add_argument(
         "--input-dir",
         default="../pr-data/prs",
-        help="PRデータディレクトリのパス (デフォルト: ../pr-data/prs)"
+        help="PRデータディレクトリのパス (デフォルト: ../pr-data/prs)",
     )
     parser.add_argument(
         "--output-file",
         default="../pr-data/reports/contribution_stats.json",
-        help="出力JSONファイルのパス (デフォルト: ../pr-data/reports/contribution_stats.json)"
+        help="出力JSONファイルのパス (デフォルト: ../pr-data/reports/contribution_stats.json)",
     )
 
     args = parser.parse_args()
