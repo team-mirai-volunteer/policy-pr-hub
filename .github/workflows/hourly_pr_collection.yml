@@ -1,0 +1,88 @@
+name: PR データの時間毎収集
+
+on:
+  schedule:
+    # 毎時0分に実行
+    - cron: "0 * * * *"
+  workflow_dispatch: # 手動実行も可能にする
+
+jobs:
+  hourly-pr-collection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: policy-pr-hubリポジトリのチェックアウト
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: policy-pr-hub
+
+      - name: Python環境のセットアップ
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: 依存関係のインストール
+        run: |
+          cd policy-pr-hub
+          pip install -r requirements.txt
+
+      - name: pr-dataリポジトリのチェックアウト
+        uses: actions/checkout@v3
+        with:
+          repository: team-mirai-volunteer/pr-data
+          token: ${{ secrets.NISHIO_GITHUB_TOKEN }}
+          path: pr-data
+
+      - name: 事前データ整合性チェック
+        env:
+          GITHUB_TOKEN: ${{ secrets.NISHIO_GITHUB_TOKEN }}
+        run: |
+          cd policy-pr-hub
+          echo "=== 事前データ整合性チェック ==="
+          python scripts/data_integrity_checker.py --output-dir ../pr-data/reports/
+          echo "事前整合性チェックが完了しました"
+
+      - name: 最新PRの軽量収集（時間毎）
+        env:
+          GITHUB_TOKEN: ${{ secrets.NISHIO_GITHUB_TOKEN }}
+        run: |
+          cd policy-pr-hub
+          echo "=== 最新PRの軽量収集 ==="
+          echo "最新の50件のPRを対象に更新チェックを実行します"
+          python src/collectors/pr_collector_main.py --mode update --limit 50 --output-dir ../pr-data/prs
+          echo "軽量収集が完了しました"
+
+      - name: 欠損PRの効率的な補完収集
+        env:
+          GITHUB_TOKEN: ${{ secrets.NISHIO_GITHUB_TOKEN }}
+        run: |
+          cd policy-pr-hub
+          echo "=== 欠損PRの効率的な補完収集 ==="
+          echo "既存ファイルをチェックして未収集のPRのみを処理します"
+          python src/collectors/pr_collector_main.py --mode uncollected --limit 20 --output-dir ../pr-data/prs
+          echo "欠損PRの補完収集が完了しました"
+
+      - name: 事後データ整合性チェック
+        env:
+          GITHUB_TOKEN: ${{ secrets.NISHIO_GITHUB_TOKEN }}
+        run: |
+          cd policy-pr-hub
+          echo "=== 事後データ整合性チェック ==="
+          python scripts/data_integrity_checker.py --output-dir ../pr-data/reports/
+          echo "事後整合性チェックが完了しました"
+
+      - name: 変更のコミットとプッシュ
+        run: |
+          cd pr-data
+          git config --local user.email "devin-ai-integration[bot]@users.noreply.github.com"
+          git config --local user.name "Devin AI"
+          
+          git add .
+          if git diff --staged --quiet; then
+            echo "変更がないため、コミットをスキップします"
+          else
+            git commit -m "時間毎PRデータ収集: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            git push
+            echo "変更をプッシュしました"
+          fi
