@@ -1,4 +1,4 @@
-name: 日次PRデータ更新（改善版）
+name: 日次PRデータ更新（フル処理・改善版）
 
 on:
   schedule:
@@ -55,12 +55,12 @@ jobs:
           echo "=== 欠損PR分析 ==="
           python scripts/missing_pr_analyzer.py --verbose
 
-      - name: 通常のPRデータ収集（更新モード）
+      - name: 通常のPRデータ収集（更新モード・日次フル処理）
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd policy-pr-hub
-          echo "=== 通常のPRデータ収集 ==="
+          echo "=== 通常のPRデータ収集（日次フル処理） ==="
           python src/collectors/pr_collector_main.py --mode update --output-dir ../pr-data/prs
           echo "通常のPRデータ収集が完了しました"
 
@@ -69,8 +69,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd policy-pr-hub
-          echo "=== 欠損PRの効率的な補完収集 ==="
-          echo "既存ファイルをチェックして未収集のPRのみを処理します"
+          echo "=== 欠損PRの効率的な補完収集（日次フル処理） ==="
+          echo "既存ファイルをチェックして未収集のPRのみを処理します（制限なし）"
           
           # 未収集PRを効率的に収集（既存ファイルをチェックして欠損分のみ処理）
           python src/collectors/pr_collector_main.py --mode uncollected --output-dir ../pr-data/prs
