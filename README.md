@@ -83,7 +83,7 @@ export GITHUB_TOKEN=your_github_token
 2. **少量のPRデータのみを収集する場合**
    ```bash
    # 最新の10件のPRのみを収集（Rate Limitに当たりにくい）
-   python src/collectors/pr_collector_main.py --mode update --limit 10
+   python src/collectors/pr_collector_main.py --mode update --max-count 10
    
    # または特定の範囲のPRのみを収集
    python src/collectors/pr_collector_main.py --mode sequential --start-number 1 --end-number 10
