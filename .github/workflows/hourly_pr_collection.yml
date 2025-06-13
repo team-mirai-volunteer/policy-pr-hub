@@ -50,7 +50,7 @@ jobs:
           cd policy-pr-hub
           echo "=== 最新PRの軽量収集 ==="
           echo "最新の50件のPRを対象に更新チェックを実行します"
-          python src/collectors/pr_collector_main.py --mode update --limit 50 --output-dir ../pr-data/prs
+          python src/collectors/pr_collector_main.py --mode update --max-count 50 --output-dir ../pr-data/prs
           echo "軽量収集が完了しました"
 
       - name: 欠損PRの効率的な補完収集
@@ -60,7 +60,7 @@ jobs:
           cd policy-pr-hub
           echo "=== 欠損PRの効率的な補完収集 ==="
           echo "既存ファイルをチェックして未収集のPRのみを処理します"
-          python src/collectors/pr_collector_main.py --mode uncollected --limit 20 --output-dir ../pr-data/prs
+          python src/collectors/pr_collector_main.py --mode uncollected --max-count 20 --output-dir ../pr-data/prs
           echo "欠損PRの補完収集が完了しました"
 
       - name: 事後データ整合性チェック
