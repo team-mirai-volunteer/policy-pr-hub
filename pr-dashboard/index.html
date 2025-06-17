@@ -244,6 +244,13 @@
                         </label>
                         <label>
                             <input type="checkbox" value="review_needed"> レビュー必要
+                        <label>
+                            <input type="checkbox" value="high_engagement"> 高エンゲージメント
+                        </label>
+                        <label>
+                            <input type="checkbox" value="recent_activity"> 最近のアクティビティ
+                        </label>
+
                         </label>
                     </div>
                 </div>
@@ -254,6 +261,16 @@
         <div class="main-chart" id="mainChart" style="display: none;">
             <div id="scatter" style="height: 600px;"></div>
         </div>
+        
+        <!-- エンゲージメント指標チャート -->
+        <div class="main-chart" id="engagementChart" style="display: none;">
+            <h4>📊 エンゲージメント指標</h4>
+            <div style="display: flex; gap: 20px;">
+                <div id="reactionChart" style="height: 300px; flex: 1;"></div>
+                <div id="activityChart" style="height: 300px; flex: 1;"></div>
+            </div>
+        </div>
+
         
         <!-- 統計情報パネル -->
         <div class="stats-panel" id="statsPanel" style="display: none;">
@@ -481,6 +498,66 @@
                 ? `📊 ${filteredData.length}件のデータを表示中（全体: ${originalData.length}件）`
                 : 'フィルタ条件に該当するデータがありません';
             document.getElementById('message').textContent = message;
+
+        function updateEngagementVisualization() {
+            if (!filteredData.length) return;
+
+            const reactionData = {};
+            const activityData = [];
+            
+            filteredData.forEach(pr => {
+                if (pr.engagement_summary && pr.engagement_summary.reaction_breakdown) {
+                    Object.entries(pr.engagement_summary.reaction_breakdown).forEach(([reaction, count]) => {
+                        reactionData[reaction] = (reactionData[reaction] || 0) + count;
+                    });
+                }
+                
+                if (pr.engagement_summary && pr.engagement_summary.last_activity) {
+                    activityData.push({
+                        date: new Date(pr.engagement_summary.last_activity).toISOString().split('T')[0],
+                        reactions: pr.engagement_summary.total_reactions || 0,
+                        pr_number: pr.number || pr.pr_number
+                    });
+                }
+            });
+
+            if (Object.keys(reactionData).length > 0) {
+                const reactionTrace = {
+                    x: Object.keys(reactionData),
+                    y: Object.values(reactionData),
+                    type: 'bar',
+                    name: 'リアクション数',
+                    marker: { color: '#30bca7' }
+                };
+
+                Plotly.newPlot('reactionChart', [reactionTrace], {
+                    title: 'リアクション分布',
+                    xaxis: { title: 'リアクション種類' },
+                    yaxis: { title: '件数' },
+                    margin: { t: 40, b: 40, l: 40, r: 40 }
+                });
+            }
+
+            if (activityData.length > 0) {
+                const activityTrace = {
+                    x: activityData.map(d => d.date),
+                    y: activityData.map(d => d.reactions),
+                    text: activityData.map(d => `PR #${d.pr_number}`),
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'アクティビティ',
+                    marker: { color: '#1a8b7a', size: 8 }
+                };
+
+                Plotly.newPlot('activityChart', [activityTrace], {
+                    title: '時系列アクティビティ',
+                    xaxis: { title: '日付' },
+                    yaxis: { title: 'リアクション数' },
+                    margin: { t: 40, b: 40, l: 40, r: 40 }
+                });
+            }
+        }
+
         }
         
         function updateScatterPlot() {

@@ -1,9 +1,9 @@
-name: 日次PRデータ更新（フル処理・改善版）
+name: 週次PRデータ更新（エンゲージメント指標対応）
 
 on:
   schedule:
-    # 毎日午前3時（UTC）に実行
-    - cron: "0 3 * * *"
+    # 毎週日曜日午前3時（UTC）に実行
+    - cron: "0 3 * * 0"
   workflow_dispatch: # 手動実行も可能にする
 
 jobs:
