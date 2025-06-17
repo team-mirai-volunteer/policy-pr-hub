@@ -283,6 +283,9 @@ class PRCollector:
             if pr_data:
                 self.save_pr_data(pr_data, output_dir)
                 collected_count += 1
+            else:
+                print(f"PR #{pr_number} は存在しません（削除済みまたはアクセス不可）")
+                print(f"  - known_issue_numbersへの追加を検討してください")
 
             if max_count and collected_count >= max_count:
                 print(f"指定された最大数 {max_count} に達したため収集を終了します")

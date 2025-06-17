@@ -36,7 +36,7 @@ def analyze_missing_prs(verbose=False):
     repo_name = github_config["repo_name"]
     api_base_url = github_config["api_base_url"]
 
-    known_issue_numbers = {181, 182, 194, 215, 802, 931, 1803}
+    known_issue_numbers = {181, 182, 194, 215, 802, 931, 1803, 2248}
 
     print("ローカルPRファイルを確認中...")
 

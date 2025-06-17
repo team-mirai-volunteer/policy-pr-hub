@@ -53,6 +53,16 @@ jobs:
           python src/collectors/pr_collector_main.py --mode update --max-count 50 --output-dir ../pr-data/prs
           echo "軽量収集が完了しました"
 
+      - name: 事前状態同期
+        env:
+          GITHUB_TOKEN: ${{ secrets.NISHIO_GITHUB_TOKEN }}
+        run: |
+          cd policy-pr-hub
+          echo "=== 事前状態同期 ==="
+          echo "データ整合性チェック前に最新状態を同期します"
+          python src/collectors/pr_collector_main.py --mode state_update --max-count 50 --output-dir ../pr-data/prs
+          echo "事前状態同期が完了しました"
+
       - name: 欠損PRの効率的な補完収集
         env:
           GITHUB_TOKEN: ${{ secrets.NISHIO_GITHUB_TOKEN }}
