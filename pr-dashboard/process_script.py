@@ -292,6 +292,36 @@ def create_dashboard_flags(stance_val, assert_val, text_length=0):
         flags["long_strong"] = text_length > 1000 and abs(stance_val) >= 3
         flags["short_strong"] = text_length <= 300 and abs(stance_val) >= 3
 
+
+def create_engagement_flags(engagement_summary):
+    """エンゲージメント指標に基づくフラグ作成"""
+    flags = {}
+
+    if not engagement_summary:
+        return flags
+
+    total_reactions = engagement_summary.get("total_reactions", 0)
+    label_changes = engagement_summary.get("label_changes_count", 0)
+
+    flags["high_engagement"] = total_reactions >= 5 or label_changes >= 3
+    flags["medium_engagement"] = 2 <= total_reactions < 5 or 1 <= label_changes < 3
+    flags["low_engagement"] = total_reactions < 2 and label_changes < 1
+
+    last_activity = engagement_summary.get("last_activity")
+    if last_activity:
+        from datetime import datetime, timedelta
+
+        try:
+            last_date = datetime.fromisoformat(last_activity.replace("Z", "+00:00"))
+            recent_threshold = datetime.now().replace(
+                tzinfo=last_date.tzinfo
+            ) - timedelta(days=7)
+            flags["recent_activity"] = last_date > recent_threshold
+        except:
+            flags["recent_activity"] = False
+
+    return flags
+
     return flags
 
 

@@ -78,6 +78,62 @@ class PRCollector:
         url = f"{self.api_base_url}/repos/{self.repo_owner}/{self.repo_name}/pulls/{pr_number}/files"
         return make_github_api_request(url)
 
+    def get_pr_reactions(self, pr_number):
+        """PRのリアクション情報を取得"""
+        url = f"{self.api_base_url}/repos/{self.repo_owner}/{self.repo_name}/issues/{pr_number}/reactions"
+        return make_github_api_request(url)
+
+    def get_pr_events(self, pr_number):
+        """PRのイベント履歴（ラベル変更等）を取得"""
+        url = f"{self.api_base_url}/repos/{self.repo_owner}/{self.repo_name}/issues/{pr_number}/events"
+        return make_github_api_request(url)
+
+    def get_comment_reactions(self, comment_id):
+        """コメントのリアクション情報を取得"""
+        url = f"{self.api_base_url}/repos/{self.repo_owner}/{self.repo_name}/issues/comments/{comment_id}/reactions"
+        return make_github_api_request(url)
+
+    def get_review_comment_reactions(self, comment_id):
+        """レビューコメントのリアクション情報を取得"""
+        url = f"{self.api_base_url}/repos/{self.repo_owner}/{self.repo_name}/pulls/comments/{comment_id}/reactions"
+        return make_github_api_request(url)
+
+    def calculate_engagement_summary(self, pr_number):
+        """エンゲージメント指標の要約を計算"""
+        reactions = self.get_pr_reactions(pr_number)
+        events = self.get_pr_events(pr_number)
+
+        reaction_counts = {}
+        total_reactions = 0
+        if reactions:
+            for reaction in reactions:
+                content = reaction.get("content", "unknown")
+                reaction_counts[content] = reaction_counts.get(content, 0) + 1
+                total_reactions += 1
+
+        label_changes = []
+        if events:
+            for event in events:
+                if event.get("event") in ["labeled", "unlabeled"]:
+                    label_changes.append(
+                        {
+                            "event": event.get("event"),
+                            "label": event.get("label", {}).get("name"),
+                            "actor": event.get("actor", {}).get("login"),
+                            "created_at": event.get("created_at"),
+                        }
+                    )
+
+        return {
+            "total_reactions": total_reactions,
+            "reaction_breakdown": reaction_counts,
+            "label_changes_count": len(label_changes),
+            "label_changes": label_changes,
+            "last_activity": max([e.get("created_at") for e in events] + [""])
+            if events
+            else None,
+        }
+
     def get_pr_commits(self, pr_number):
         """PRのコミット一覧を取得する"""
         url = f"{self.api_base_url}/repos/{self.repo_owner}/{self.repo_name}/pulls/{pr_number}/commits"
@@ -116,6 +172,24 @@ class PRCollector:
 
         commits = self.get_pr_commits(pr_number)
 
+        reactions = self.get_pr_reactions(pr_number)
+        events = self.get_pr_events(pr_number)
+        engagement_summary = self.calculate_engagement_summary(pr_number)
+
+        if comments:
+            for comment in comments:
+                if comment.get("id"):
+                    comment["reactions_detailed"] = self.get_comment_reactions(
+                        comment["id"]
+                    )
+
+        if review_comments:
+            for comment in review_comments:
+                if comment.get("id"):
+                    comment["reactions_detailed"] = self.get_review_comment_reactions(
+                        comment["id"]
+                    )
+
         pr_data = {
             "basic_info": basic_info,
             "labels": labels,
@@ -123,6 +197,9 @@ class PRCollector:
             "review_comments": review_comments,
             "files": files,
             "commits": commits,
+            "reactions": reactions,
+            "events": events,
+            "engagement_summary": engagement_summary,
             "collected_at": datetime.now().isoformat(),
         }
 
