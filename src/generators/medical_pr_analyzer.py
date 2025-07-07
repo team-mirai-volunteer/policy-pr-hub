@@ -7,6 +7,7 @@
 
 import json
 import os
+import time
 from pathlib import Path
 from collections import defaultdict
 from datetime import datetime
@@ -25,6 +26,11 @@ class MedicalPRAnalyzer:
         self.config = config or load_config()
         self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
         self.total_cost = 0.0
+        self.total_input_tokens = 0
+        self.total_output_tokens = 0
+        self.api_call_count = 0
+        self.start_time = None
+        self.end_time = None
 
     def load_pr_data_from_directory(self, input_dir):
         """PRデータをディレクトリから読み込む"""
@@ -168,6 +174,9 @@ PRの内容:
                 output_tokens = usage.get("completion_tokens", 0)
                 cost = (input_tokens * 0.0025 + output_tokens * 0.01) / 1000
                 self.total_cost += cost
+                self.total_input_tokens += input_tokens
+                self.total_output_tokens += output_tokens
+                self.api_call_count += 1
                 print(f"API使用料: ${cost:.6f} (入力: {input_tokens}トークン, 出力: {output_tokens}トークン)")
 
             content = result["choices"][0]["message"]["content"]
@@ -192,6 +201,12 @@ PRの内容:
 
     def analyze_medical_prs(self, input_dir, output_file=None, max_count=None):
         """医療PRの課題・解決策分析を実行"""
+        self.start_time = time.time()
+        start_datetime = datetime.now()
+        
+        print(f"=== 医療PR分析開始 ===")
+        print(f"開始時刻: {start_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
+        
         pr_data = self.load_pr_data_from_directory(input_dir)
         medical_prs = self.filter_medical_prs(pr_data)
         
@@ -205,7 +220,12 @@ PRの内容:
         
         for i, pr in enumerate(medical_prs):
             if i % 5 == 0:
-                print(f"進捗: {i}/{len(medical_prs)}")
+                elapsed = time.time() - self.start_time
+                avg_time_per_pr = elapsed / max(i, 1)
+                remaining_prs = len(medical_prs) - i
+                estimated_remaining = avg_time_per_pr * remaining_prs
+                print(f"進捗: {i}/{len(medical_prs)} ({i/len(medical_prs)*100:.1f}%) - "
+                      f"経過時間: {elapsed:.1f}秒 - 推定残り時間: {estimated_remaining:.1f}秒")
             
             basic_info = pr.get("basic_info", {})
             pr_number = basic_info.get("number")
@@ -224,14 +244,36 @@ PRの内容:
             
             results.append(result)
         
-        print(f"分析完了: {len(results)}件のPRを分析しました")
+        self.end_time = time.time()
+        total_duration = self.end_time - self.start_time
+        end_datetime = datetime.now()
+        
+        print(f"\n=== 分析完了 ===")
+        print(f"終了時刻: {end_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"総実行時間: {total_duration:.2f}秒 ({total_duration/60:.2f}分)")
+        print(f"分析PR数: {len(results)}件")
+        print(f"平均処理時間: {total_duration/len(results):.2f}秒/PR")
+        print(f"API呼び出し回数: {self.api_call_count}回")
+        print(f"総入力トークン数: {self.total_input_tokens:,}")
+        print(f"総出力トークン数: {self.total_output_tokens:,}")
         print(f"総API使用料: ${self.total_cost:.6f}")
+        if self.api_call_count > 0:
+            print(f"平均API使用料: ${self.total_cost/self.api_call_count:.6f}/回")
         
         output_data = {
             "metadata": {
                 "total_analyzed": len(results),
-                "analysis_date": datetime.now().isoformat(),
+                "analysis_date": end_datetime.isoformat(),
+                "start_time": start_datetime.isoformat(),
+                "end_time": end_datetime.isoformat(),
+                "total_duration_seconds": total_duration,
+                "total_duration_minutes": total_duration / 60,
+                "average_time_per_pr": total_duration / len(results) if results else 0,
                 "total_cost": self.total_cost,
+                "api_call_count": self.api_call_count,
+                "total_input_tokens": self.total_input_tokens,
+                "total_output_tokens": self.total_output_tokens,
+                "average_cost_per_api_call": self.total_cost / self.api_call_count if self.api_call_count > 0 else 0,
                 "category": "医療"
             },
             "results": results

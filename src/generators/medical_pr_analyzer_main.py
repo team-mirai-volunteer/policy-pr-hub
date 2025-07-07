@@ -38,9 +38,16 @@ def main():
             import json
             print(json.dumps(result, ensure_ascii=False, indent=2))
             
-        print(f"\n=== 分析完了 ===")
-        print(f"分析対象PR数: {result['metadata']['total_analyzed']}")
-        print(f"API使用料: ${result['metadata']['total_cost']:.6f}")
+        print(f"\n=== 実行サマリー ===")
+        metadata = result['metadata']
+        print(f"分析対象PR数: {metadata['total_analyzed']}")
+        print(f"総実行時間: {metadata['total_duration_seconds']:.2f}秒 ({metadata['total_duration_minutes']:.2f}分)")
+        print(f"平均処理時間: {metadata['average_time_per_pr']:.2f}秒/PR")
+        print(f"API呼び出し回数: {metadata['api_call_count']}")
+        print(f"総API使用料: ${metadata['total_cost']:.6f}")
+        if metadata['api_call_count'] > 0:
+            print(f"平均API使用料: ${metadata['average_cost_per_api_call']:.6f}/回")
+        print(f"総トークン数: {metadata['total_input_tokens']:,} (入力) + {metadata['total_output_tokens']:,} (出力)")
         
     except Exception as e:
         print(f"エラーが発生しました: {e}")
