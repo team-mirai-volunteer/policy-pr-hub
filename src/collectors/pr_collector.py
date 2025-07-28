@@ -6,7 +6,6 @@ GitHubのAPIを使用してPRデータを収集し、ファイルに保存しま
 """
 
 import json
-import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -285,7 +284,7 @@ class PRCollector:
                 collected_count += 1
             else:
                 print(f"PR #{pr_number} は存在しません（削除済みまたはアクセス不可）")
-                print(f"  - known_issue_numbersへの追加を検討してください")
+                print("  - known_issue_numbersへの追加を検討してください")
 
             if max_count and collected_count >= max_count:
                 print(f"指定された最大数 {max_count} に達したため収集を終了します")
@@ -348,7 +347,7 @@ class PRCollector:
 
         cutoff_date = (datetime.now() - timedelta(days=check_recent_days)).isoformat()
 
-        print(f"=== PR状態更新チェック開始 ===")
+        print("=== PR状態更新チェック開始 ===")
         print(f"チェック対象期間: 最近{check_recent_days}日間")
         print(f"カットオフ日時: {cutoff_date}")
 
@@ -415,7 +414,7 @@ class PRCollector:
 
             page += 1
 
-        print(f"=== PR状態更新チェック完了 ===")
+        print("=== PR状態更新チェック完了 ===")
         print(f"新規収集: {collected_count}件")
         print(f"状態更新: {updated_count}件")
 

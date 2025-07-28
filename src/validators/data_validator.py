@@ -7,11 +7,10 @@ GitHub APIから取得した統計情報とローカルに保存されたPRデ�
 """
 
 import json
-import os
-from collections import defaultdict, Counter
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional
 
 from ..utils.github_api import make_github_api_request, load_config
 

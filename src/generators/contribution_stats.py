@@ -7,7 +7,6 @@ JSON形式で生成します。
 """
 
 import json
-import os
 from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -132,7 +131,7 @@ class ContributionStatsGenerator:
 
         stats = self.analyze_contribution_prs(pr_data)
 
-        print(f"\n=== 統計結果 ===")
+        print("\n=== 統計結果 ===")
         print(f"総PR数: {stats['total_prs']}")
         print(f"改善貢献PR数: {stats['contribution_prs']}")
         print(f"  - マージされたPR: {stats['merged_prs']}")

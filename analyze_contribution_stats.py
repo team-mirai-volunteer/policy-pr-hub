@@ -7,9 +7,7 @@ pr-dataに保存されているPRデータを分析して、改善貢献PR（mer
 """
 
 import json
-import os
 from pathlib import Path
-from datetime import datetime
 from collections import defaultdict
 
 
@@ -68,12 +66,12 @@ def analyze_contribution_prs():
         except Exception as e:
             print(f"エラー {json_file}: {e}")
 
-    print(f"\n=== 改善貢献PR統計結果 ===")
+    print("\n=== 改善貢献PR統計結果 ===")
     print(f"総PR数: {total_prs}")
     print(f"改善貢献PR数: {contribution_prs}")
     print(f"  - マージされたPR: {merged_prs}")
     print(f"  - thankyouラベル付きクローズPR: {thankyou_closed_prs}")
-    print(f"\n日別統計（上位10日）:")
+    print("\n日別統計（上位10日）:")
     sorted_daily = sorted(daily_counts.items(), key=lambda x: x[1], reverse=True)[:10]
     for date, count in sorted_daily:
         print(f"  {date}: {count}件")

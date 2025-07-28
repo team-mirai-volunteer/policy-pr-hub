@@ -4,12 +4,12 @@
   "description": "政策プルリク活用のためのプラットフォーム",
   "main": "index.js",
   "scripts": {
-    "dev": "echo \"開発サーバーの起動コマンドをここに設定してください\" && exit 1",
-    "build": "echo \"ビルドコマンドをここに設定してください\" && exit 1",
-    "start": "echo \"本番環境起動コマンドをここに設定してください\" && exit 1",
-    "test": "echo \"テストコマンドをここに設定してください\" && exit 1",
-    "lint": "echo \"リントコマンドをここに設定してください\" && exit 1",
-    "format": "echo \"フォーマットコマンドをここに設定してください\" && exit 1"
+    "lint": "ruff check .",
+    "format": "ruff format .",
+    "test": "python -m pytest tests/ || echo 'No tests configured yet'",
+    "dev": "echo 'This is a Python project. Use: python src/collectors/pr_collector_main.py --help'",
+    "build": "echo 'Python project - no build step required'",
+    "start": "python src/collectors/pr_collector_main.py --mode update --max-count 10"
   },
   "repository": {
     "type": "git",

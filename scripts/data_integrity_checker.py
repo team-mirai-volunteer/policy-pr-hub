@@ -47,7 +47,7 @@ def check_data_integrity(detailed=False, output_dir=None):
     print(f"不足PR数: {comparison['summary']['difference']:,}件")
 
     if detailed:
-        print(f"\n=== 詳細統計 ===")
+        print("\n=== 詳細統計 ===")
         print(
             f"Open PR - GitHub: {github_stats['state_counts']['open']}, ローカル: {local_stats['state_counts']['open']}"
         )
@@ -71,11 +71,11 @@ def check_data_integrity(detailed=False, output_dir=None):
         print(f"\n📄 詳細レポートを生成: {report_file}")
 
     if comparison["summary"]["coverage_percentage"] < 95.0:
-        print(f"\n⚠️  カバレッジが95%未満です。データ収集の実行を推奨します。")
+        print("\n⚠️  カバレッジが95%未満です。データ収集の実行を推奨します。")
     elif comparison["summary"]["coverage_percentage"] < 99.0:
-        print(f"\n💡 カバレッジは良好ですが、さらなる改善が可能です。")
+        print("\n💡 カバレッジは良好ですが、さらなる改善が可能です。")
     else:
-        print(f"\n✅ データ整合性は良好です。")
+        print("\n✅ データ整合性は良好です。")
 
 
 def main():

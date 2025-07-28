@@ -3,11 +3,9 @@
 PR状態更新機能のテスト - yaml依存を回避
 """
 
-import json
 import os
 import sys
 import time
-from datetime import datetime, timedelta
 from pathlib import Path
 
 GITHUB_CONFIG = {
@@ -66,7 +64,7 @@ def test_state_update():
             check_recent_days=7,
         )
 
-        print(f"テスト完了:")
+        print("テスト完了:")
         print(f"  新規収集: {collected_count}件")
         print(f"  状態更新: {updated_count}件")
 

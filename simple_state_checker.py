@@ -4,7 +4,6 @@
 """
 
 import json
-import os
 from pathlib import Path
 from collections import defaultdict
 
@@ -47,7 +46,7 @@ def main():
             indent=2,
         )
 
-    print(f"\n結果を /tmp/state_check_before.json に保存しました")
+    print("\n結果を /tmp/state_check_before.json に保存しました")
 
 
 if __name__ == "__main__":

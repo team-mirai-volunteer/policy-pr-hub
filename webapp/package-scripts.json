@@ -1,0 +1,3 @@
+{
+  "migrate-data": "tsx src/scripts/migrate-data.ts"
+}

@@ -9,7 +9,7 @@ GitHub Actionsワークフローの実行状況を監視し、
 import sys
 import argparse
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -40,7 +40,7 @@ def check_workflow_health():
 
         recent_runs = runs["workflow_runs"][:5]
 
-        print(f"最近の5回の実行:")
+        print("最近の5回の実行:")
         for run in recent_runs:
             status = run["status"]
             conclusion = run["conclusion"]

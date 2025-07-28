@@ -58,7 +58,7 @@ def resolve_pr_issue_conflicts(debug=False):
 
                 if is_pull_request:
                     print(f"  → PR #{pr_number}: {issue_title} ({issue_state})")
-                    print(f"     注意: これはPRです（Issue APIでもアクセス可能）")
+                    print("     注意: これはPRです（Issue APIでもアクセス可能）")
                 else:
                     print(f"  → Issue #{pr_number}: {issue_title} ({issue_state})")
                     issue_exists.append(
@@ -84,12 +84,12 @@ def resolve_pr_issue_conflicts(debug=False):
     print(f"完全に欠番: {len(pr_only_missing)}件")
 
     if issue_exists:
-        print(f"\n📋 Issueとして存在する番号:")
+        print("\n📋 Issueとして存在する番号:")
         for issue in issue_exists:
             print(f"  #{issue['number']}: {issue['title']} ({issue['state']})")
 
     if pr_only_missing:
-        print(f"\n❌ 完全に欠番の番号:")
+        print("\n❌ 完全に欠番の番号:")
         for num in pr_only_missing:
             print(f"  #{num}")
 
@@ -97,14 +97,14 @@ def resolve_pr_issue_conflicts(debug=False):
     actual_missing = len(pr_only_missing)
     coverage = ((total_github_numbers - actual_missing) / total_github_numbers) * 100
 
-    print(f"\n📊 更新されたカバレッジ:")
+    print("\n📊 更新されたカバレッジ:")
     print(f"  GitHub総番号: {total_github_numbers}")
     print(f"  実際の欠番: {actual_missing}件")
     print(f"  カバレッジ: {coverage:.2f}%")
 
     if len(issue_exists) > 0:
         print(f"\n✅ {len(issue_exists)}件がIssueとして存在するため、")
-        print(f"   PRデータとしての欠番は正常です。")
+        print("   PRデータとしての欠番は正常です。")
 
 
 def main():
