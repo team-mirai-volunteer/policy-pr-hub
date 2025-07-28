@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 
 const Plot = dynamic(() => import('react-plotly.js'), { ssr: false }) as any
@@ -32,6 +32,12 @@ export default function ScatterChart({ data, onPointClick }: ScatterChartProps) 
     const match = url.match(/\/pull\/(\d+)$/)
     return match ? parseInt(match[1]) : 0
   }
+
+  const stableOnPointClick = useCallback((prNumber: number) => {
+    if (onPointClick) {
+      onPointClick(prNumber)
+    }
+  }, [onPointClick])
 
   useEffect(() => {
     const labels = [...new Set(data.map(d => d.label).filter(Boolean))].sort()
@@ -98,7 +104,8 @@ export default function ScatterChart({ data, onPointClick }: ScatterChartProps) 
           line: { color: 'gray', width: 2, dash: 'dash' } }
       ]
     })
-  }, [data])
+
+  }, [data, stableOnPointClick])
 
   const handleClick = (data: any) => {
     console.log('Plot clicked:', data)
@@ -108,9 +115,7 @@ export default function ScatterChart({ data, onPointClick }: ScatterChartProps) 
       console.log('PR Number from click:', prNumber)
       if (prNumber) {
         console.log('Navigating to PR:', prNumber)
-        if (onPointClick) {
-          onPointClick(prNumber)
-        }
+        stableOnPointClick(prNumber)
       }
     }
   }
@@ -123,6 +128,7 @@ export default function ScatterChart({ data, onPointClick }: ScatterChartProps) 
         onClick={handleClick}
         style={{ width: '100%', height: '600px' }}
         config={{ responsive: true }}
+        useResizeHandler={true}
       />
     </div>
   )
