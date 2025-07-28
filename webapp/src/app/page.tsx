@@ -18,7 +18,11 @@ export default function Home() {
           <p className="text-gray-700">
             URLに <code className="bg-gray-100 px-2 py-1 rounded">/pr/[番号]</code> を追加してPRの詳細を表示できます。
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            <Link href="/scatter" className="block p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+              <div className="font-medium text-orange-900">散布図分析</div>
+              <div className="text-sm text-orange-700">PRを可視化して分析</div>
+            </Link>
             <Link href="/pr/108" className="block p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
               <div className="font-medium text-blue-900">PR #108</div>
               <div className="text-sm text-blue-700">サンプルPRを見る</div>
