@@ -56,6 +56,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
+export async function generateStaticParams() {
+  const commonPRs = [1, 108, 1000, 2000, 3000, 4000, 5000]
+  return commonPRs.map((id) => ({
+    id: id.toString(),
+  }))
+}
+
 export default async function PRPage({ params }: PageProps) {
   const resolvedParams = await params
   const prNumber = parseInt(resolvedParams.id)
