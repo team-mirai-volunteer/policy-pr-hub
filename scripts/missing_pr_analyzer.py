@@ -79,7 +79,7 @@ def analyze_missing_prs(verbose=False):
     expected_range = set(range(1, latest_pr_number + 1))
     missing_numbers = expected_range - local_pr_numbers - known_issue_numbers
 
-    print(f"\n=== 連番欠損分析 ===")
+    print("\n=== 連番欠損分析 ===")
     print(f"期待される総PR数: {len(expected_range):,}件 (1-{latest_pr_number})")
     print(f"既知のIssue数: {len(known_issue_numbers):,}件")
     print(f"実際のローカルPR数: {len(local_pr_numbers):,}件")
@@ -109,7 +109,7 @@ def analyze_missing_prs(verbose=False):
         else:
             ranges.append(f"#{start}-#{end}")
 
-        print(f"\n欠損PR範囲（最初の20範囲）:")
+        print("\n欠損PR範囲（最初の20範囲）:")
         for i, range_str in enumerate(ranges[:20]):
             print(f"  {range_str}")
 

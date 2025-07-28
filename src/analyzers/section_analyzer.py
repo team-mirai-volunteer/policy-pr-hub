@@ -5,10 +5,8 @@ PRのセクション分析モジュール
 PRで変更されたマークダウンファイルのセクション（見出し）を分析します。
 """
 
-import json
 import os
 import re
-from pathlib import Path
 
 from ..utils.github_api import load_config
 

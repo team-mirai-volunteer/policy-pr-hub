@@ -4,7 +4,6 @@
 """
 
 import json
-import os
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -37,7 +36,7 @@ def test_needs_state_update_logic():
 
     needs_update = state_changed or updated_time_changed or merged_status_changed
 
-    print(f"テストケース1 - 状態変更検出:")
+    print("テストケース1 - 状態変更検出:")
     print(f"  ローカル状態: {local_data['basic_info']['state']}")
     print(f"  GitHub状態: {github_data['state']}")
     print(f"  状態変更: {state_changed}")
@@ -71,7 +70,7 @@ def test_needs_state_update_logic():
 
     needs_update2 = state_changed2 or updated_time_changed2 or merged_status_changed2
 
-    print(f"\nテストケース2 - 変更なし:")
+    print("\nテストケース2 - 変更なし:")
     print(f"  更新必要: {needs_update2}")
 
     assert needs_update2 == False, "変更がない場合は更新不要です"

@@ -1,7 +1,10 @@
 # ============================================================
 # ダッシュボード対応版 - 詳細フラグ付きExcel出力
 # ============================================================
-import os, re, time, torch, pandas as pd
+import re
+import time
+import torch
+import pandas as pd
 from tqdm import tqdm
 from transformers import (
     AutoTokenizer,
@@ -347,23 +350,23 @@ df["priority"] = [
 # ============================================================
 print("\n📊 詳細結果統計:")
 print("=" * 50)
-print(f"スタンス分布:")
+print("スタンス分布:")
 for val in sorted(df["stance_val"].unique()):
     count = (df["stance_val"] == val).sum()
     print(f"  {val:+2d}: {count:3d}件")
 
-print(f"\n主張強度分布:")
+print("\n主張強度分布:")
 for val in sorted(df["assert_val"].unique()):
     count = (df["assert_val"] == val).sum()
     print(f"  {val:+2d}: {count:3d}件")
 
-print(f"\nカテゴリ分布:")
+print("\nカテゴリ分布:")
 print(df["category"].value_counts())
 
-print(f"\n優先度分布:")
+print("\n優先度分布:")
 print(df["priority"].value_counts())
 
-print(f"\n主要フラグ統計:")
+print("\n主要フラグ統計:")
 flag_cols = [col for col in df.columns if col.startswith("flag_")]
 for flag in [
     "flag_attention_high",
