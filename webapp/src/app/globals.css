@@ -3,6 +3,22 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --blue-bg: #eff6ff;
+  --blue-text: #1e40af;
+  --blue-text-light: #3b82f6;
+  --green-bg: #f0fdf4;
+  --green-text: #166534;
+  --green-text-light: #16a34a;
+  --purple-bg: #faf5ff;
+  --purple-text: #7c2d12;
+  --purple-text-light: #a855f7;
+  --code-bg: #f3f4f6;
+  --code-text: #374151;
 }
 
 @theme inline {
@@ -16,6 +32,22 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --card-bg: #1f2937;
+    --card-border: #374151;
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --text-muted: #9ca3af;
+    --blue-bg: rgba(30, 64, 175, 0.2);
+    --blue-text: #93c5fd;
+    --blue-text-light: #dbeafe;
+    --green-bg: rgba(22, 101, 52, 0.2);
+    --green-text: #86efac;
+    --green-text-light: #dcfce7;
+    --purple-bg: rgba(124, 45, 18, 0.2);
+    --purple-text: #c4b5fd;
+    --purple-text-light: #e9d5ff;
+    --code-bg: #374151;
+    --code-text: #d1d5db;
   }
 }
 
@@ -23,4 +55,63 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Custom styles for better dark mode support */
+.card {
+  background: var(--card-bg);
+  border-color: var(--card-border);
+}
+
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.blue-card {
+  background: var(--blue-bg);
+}
+
+.blue-text {
+  color: var(--blue-text);
+}
+
+.blue-text-light {
+  color: var(--blue-text-light);
+}
+
+.green-card {
+  background: var(--green-bg);
+}
+
+.green-text {
+  color: var(--green-text);
+}
+
+.green-text-light {
+  color: var(--green-text-light);
+}
+
+.purple-card {
+  background: var(--purple-bg);
+}
+
+.purple-text {
+  color: var(--purple-text);
+}
+
+.purple-text-light {
+  color: var(--purple-text-light);
+}
+
+.code-bg {
+  background: var(--code-bg);
+  color: var(--code-text);
 }
