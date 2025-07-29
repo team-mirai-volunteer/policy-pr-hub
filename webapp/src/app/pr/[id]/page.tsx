@@ -82,10 +82,10 @@ export default async function PRPage({ params }: PageProps) {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-xl font-normal text-muted mb-2">
           PR #{basic_info.number}: {basic_info.title}
         </h1>
-        <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+        <div className="flex items-center gap-4 text-sm text-secondary mb-4">
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
             basic_info.state === 'open' 
               ? 'bg-green-100 text-green-800' 
@@ -121,15 +121,15 @@ export default async function PRPage({ params }: PageProps) {
         )}
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold mb-4">提案内容</h2>
+      <div className="card rounded-lg shadow-sm border p-6">
+        <h2 className="text-xl font-semibold text-primary mb-4">提案内容</h2>
         <div className="prose max-w-none">
           {basic_info.body ? (
-            <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+            <div className="whitespace-pre-wrap text-secondary leading-relaxed">
               {basic_info.body}
             </div>
           ) : (
-            <div className="text-gray-500 italic">
+            <div className="text-muted italic">
               内容がありません
             </div>
           )}
@@ -137,18 +137,18 @@ export default async function PRPage({ params }: PageProps) {
       </div>
 
       {pr.comments && pr.comments.length > 0 && (
-        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold mb-4">コメント ({pr.comments.length}件)</h2>
+        <div className="mt-6 card rounded-lg shadow-sm border p-6">
+          <h2 className="text-xl font-semibold text-primary mb-4">コメント ({pr.comments.length}件)</h2>
           <div className="space-y-4">
             {pr.comments.slice(0, 5).map((comment, index) => (
-              <div key={comment.id || index} className="border-l-4 border-blue-200 pl-4">
+              <div key={comment.id || index} className="border-l-4 border-blue-300 pl-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="font-medium text-gray-900">{comment.user.login}</span>
-                  <span className="text-sm text-gray-500">
+                  <span className="font-medium text-primary">{comment.user.login}</span>
+                  <span className="text-sm text-muted">
                     {new Date(comment.created_at).toLocaleDateString('ja-JP')}
                   </span>
                 </div>
-                <div className="text-gray-700 whitespace-pre-wrap">
+                <div className="text-secondary whitespace-pre-wrap">
                   {comment.body.length > 300 
                     ? comment.body.substring(0, 300) + '...' 
                     : comment.body}
@@ -156,7 +156,7 @@ export default async function PRPage({ params }: PageProps) {
               </div>
             ))}
             {pr.comments.length > 5 && (
-              <div className="text-sm text-gray-500 text-center pt-2">
+              <div className="text-sm text-muted text-center pt-2">
                 他 {pr.comments.length - 5} 件のコメントがあります
               </div>
             )}
@@ -165,12 +165,12 @@ export default async function PRPage({ params }: PageProps) {
       )}
 
       {pr.files && pr.files.length > 0 && (
-        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold mb-4">変更ファイル ({pr.files.length}件)</h2>
+        <div className="mt-6 card rounded-lg shadow-sm border p-6">
+          <h2 className="text-xl font-semibold text-primary mb-4">変更ファイル ({pr.files.length}件)</h2>
           <div className="space-y-2">
             {pr.files.slice(0, 10).map((file, index) => (
-              <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                <span className="font-mono text-sm text-gray-700">{file.filename}</span>
+              <div key={index} className="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
+                <span className="font-mono text-sm text-secondary">{file.filename}</span>
                 <div className="flex items-center gap-2 text-xs">
                   {file.additions > 0 && (
                     <span className="text-green-600">+{file.additions}</span>
@@ -182,7 +182,7 @@ export default async function PRPage({ params }: PageProps) {
               </div>
             ))}
             {pr.files.length > 10 && (
-              <div className="text-sm text-gray-500 text-center pt-2">
+              <div className="text-sm text-muted text-center pt-2">
                 他 {pr.files.length - 10} 件のファイルがあります
               </div>
             )}
