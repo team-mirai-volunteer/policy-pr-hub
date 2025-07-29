@@ -9,7 +9,7 @@ export interface PRDashboardData {
   assert_val: number
   category: string
   priority: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export const samplePRData: PRDashboardData[] = [

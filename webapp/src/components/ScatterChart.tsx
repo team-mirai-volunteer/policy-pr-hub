@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 
-const Plot = dynamic(() => import('react-plotly.js'), { ssr: false }) as any
+const Plot = dynamic(() => import('react-plotly.js'), { ssr: false })
 
 interface PRData {
   No: number
@@ -16,7 +16,7 @@ interface PRData {
   assert_val: number
   category: string
   priority: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 interface ScatterChartProps {
@@ -25,8 +25,8 @@ interface ScatterChartProps {
 }
 
 export default function ScatterChart({ data, onPointClick }: ScatterChartProps) {
-  const [plotData, setPlotData] = useState<any[]>([])
-  const [layout, setLayout] = useState<any>({})
+  const [plotData, setPlotData] = useState<Array<Record<string, unknown>>>([])
+  const [layout, setLayout] = useState<Record<string, unknown>>({})
 
   const extractPRNumber = (url: string): number => {
     const match = url.match(/\/pull\/(\d+)$/)
@@ -41,7 +41,7 @@ export default function ScatterChart({ data, onPointClick }: ScatterChartProps) 
 
   useEffect(() => {
     const labels = [...new Set(data.map(d => d.label).filter(Boolean))].sort()
-    const traces: any[] = []
+    const traces: Array<Record<string, unknown>> = []
     
     const colors = [
       '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
@@ -52,7 +52,7 @@ export default function ScatterChart({ data, onPointClick }: ScatterChartProps) 
       const labelData = data.filter(d => d.label === label)
       if (labelData.length === 0) return
       
-      const trace = {
+      const trace: Record<string, unknown> = {
         x: labelData.map(d => d.stance_val),
         y: labelData.map(d => d.assert_val),
         mode: 'markers',
@@ -107,11 +107,11 @@ export default function ScatterChart({ data, onPointClick }: ScatterChartProps) 
 
   }, [data, stableOnPointClick])
 
-  const handleClick = (data: any) => {
-    console.log('Plot clicked:', data)
-    if (data.points && data.points.length > 0) {
-      const point = data.points[0]
-      const prNumber = point.customdata
+  const handleClick = (event: { points?: Array<{ customdata?: unknown }> }) => {
+    console.log('Plot clicked:', event)
+    if (event.points && event.points.length > 0) {
+      const point = event.points[0]
+      const prNumber = point.customdata as number
       console.log('PR Number from click:', prNumber)
       if (prNumber) {
         console.log('Navigating to PR:', prNumber)
