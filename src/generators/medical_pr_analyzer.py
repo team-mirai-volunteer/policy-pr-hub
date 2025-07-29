@@ -8,6 +8,7 @@
 import json
 import os
 import time
+import csv
 from pathlib import Path
 from collections import defaultdict
 from datetime import datetime
@@ -97,6 +98,11 @@ class MedicalPRAnalyzer:
         if files:
             filenames = [file.get("filename", "") for file in files]
             texts.append(f"変更ファイル: {', '.join(filenames)}")
+
+        # diffの内容を追加
+        for file in files:
+            if file.get("patch"):
+                texts.append(f"diff - {file.get('filename', '不明')}:\n{file['patch']}")
 
         commits = pr.get("commits", [])
         commit_msgs = []
@@ -200,7 +206,7 @@ PRの内容:
         }
 
     def analyze_medical_prs(self, input_dir, output_file=None, max_count=None):
-        """医療PRの課題・解決策分析を実行"""
+        """医療PRの課題・解決策分析を実行してCSVで出力"""
         self.start_time = time.time()
         start_datetime = datetime.now()
         
@@ -216,7 +222,7 @@ PRの内容:
         
         results = []
         
-        print(f"医療PR {len(medical_prs)}件を分析中...")
+        print(f"医療PR {len(medical_prs)}件のテキスト抽出中...")
         
         for i, pr in enumerate(medical_prs):
             if i % 5 == 0:
@@ -228,18 +234,14 @@ PRの内容:
                       f"経過時間: {elapsed:.1f}秒 - 推定残り時間: {estimated_remaining:.1f}秒")
             
             basic_info = pr.get("basic_info", {})
-            pr_number = basic_info.get("number")
-            pr_title = basic_info.get("title")
             pr_url = basic_info.get("html_url")
             
-            analysis = self.extract_issues_and_solutions(pr)
+            # PRの本文とdiffをまとめたテキストを抽出
+            text_content = self._extract_pr_content(pr)
             
             result = {
-                "pr_number": pr_number,
-                "pr_title": pr_title,
-                "pr_url": pr_url,
-                "analysis": analysis,
-                "analyzed_at": datetime.now().isoformat()
+                "text": text_content,
+                "url": pr_url
             }
             
             results.append(result)
@@ -253,42 +255,26 @@ PRの内容:
         print(f"総実行時間: {total_duration:.2f}秒 ({total_duration/60:.2f}分)")
         print(f"分析PR数: {len(results)}件")
         print(f"平均処理時間: {total_duration/len(results):.2f}秒/PR")
-        print(f"API呼び出し回数: {self.api_call_count}回")
-        print(f"総入力トークン数: {self.total_input_tokens:,}")
-        print(f"総出力トークン数: {self.total_output_tokens:,}")
-        print(f"総API使用料: ${self.total_cost:.6f}")
-        if self.api_call_count > 0:
-            print(f"平均API使用料: ${self.total_cost/self.api_call_count:.6f}/回")
         
-        output_data = {
-            "metadata": {
-                "total_analyzed": len(results),
-                "analysis_date": end_datetime.isoformat(),
-                "start_time": start_datetime.isoformat(),
-                "end_time": end_datetime.isoformat(),
-                "total_duration_seconds": total_duration,
-                "total_duration_minutes": total_duration / 60,
-                "average_time_per_pr": total_duration / len(results) if results else 0,
-                "total_cost": self.total_cost,
-                "api_call_count": self.api_call_count,
-                "total_input_tokens": self.total_input_tokens,
-                "total_output_tokens": self.total_output_tokens,
-                "average_cost_per_api_call": self.total_cost / self.api_call_count if self.api_call_count > 0 else 0,
-                "category": "医療"
-            },
-            "results": results
-        }
-        
+        # CSVファイルに出力
         if output_file:
             output_dir = os.path.dirname(output_file)
             if output_dir:
                 os.makedirs(output_dir, exist_ok=True)
             
-            with open(output_file, "w", encoding="utf-8") as f:
-                json.dump(output_data, f, ensure_ascii=False, indent=2)
-            print(f"分析結果を {output_file} に保存しました")
+            with open(output_file, "w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=["text", "url"])
+                writer.writeheader()
+                writer.writerows(results)
+            print(f"CSV結果を {output_file} に保存しました")
+        else:
+            # 標準出力にCSV形式で出力
+            import sys
+            writer = csv.DictWriter(sys.stdout, fieldnames=["text", "url"])
+            writer.writeheader()
+            writer.writerows(results)
         
-        return output_data
+        return results
 
 
 def main():
