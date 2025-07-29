@@ -99,40 +99,44 @@ export GITHUB_TOKEN=your_github_token
 
 問題抽出分析機能は、LLM（Large Language Model）を使用してPRデータから「提案者が解決すべき問題だと感じている内容」を自動抽出します。
 
-**必要な準備:**
-- OpenRouter APIキーの取得と設定
-- PRデータの準備（team-mirai-volunteer/pr-dataリポジトリから取得）
+**📖 詳細なローカル実行ガイド:** [docs/problem_extraction_guide.md](docs/problem_extraction_guide.md)
 
-**基本的な使用方法:**
+**クイックスタート:**
 ```bash
-# 環境変数でAPIキーを設定
+# 1. 依存関係のインストール
+pip install -r requirements.txt
+
+# 2. PRデータの準備（pr-dataリポジトリをクローン）
+git clone https://github.com/team-mirai-volunteer/pr-data.git ../pr-data
+
+# 3. APIキーの設定
 export OPENROUTER_API_KEY=your_openrouter_api_key
 
-# 全PRデータから問題を抽出（時間とコストがかかります）
-python src/analyzers/problem_extractor_main.py --input-dir ../pr-data/prs --output problems_all.json
-
-# テスト用に少数のPRのみを処理
-python src/analyzers/problem_extractor_main.py --input-dir ../pr-data/prs --output problems_test.json --limit 100
+# 4. テスト実行（10件のPRで動作確認）
+python src/analyzers/problem_extractor_main.py --input-dir ../pr-data/prs --output test.json --limit 10
 ```
 
+**実行時間とコストの目安:**
+- **テスト（100件）**: 5-10分、約$0.26
+- **全データ（約9,688件）**: 8-12時間、約$25-30
+
 **出力形式:**
-抽出結果は以下の形式のJSONファイルとして保存されます：
 ```json
 {
-  "PR番号": {
-    "pr_title": "PRのタイトル",
-    "pr_url": "PRのURL",
-    "problems": ["抽出された問題のリスト"],
-    "explanation": "抽出理由の説明",
-    "extracted_at": "抽出実行日時"
+  "1234": {
+    "pr_title": "高齢者支援制度の改善提案",
+    "pr_url": "https://github.com/...",
+    "problems": ["高齢者の地域での孤立が深刻化している"],
+    "explanation": "PRから明確な問題意識が読み取れます",
+    "extracted_at": "2025-01-15T10:30:00Z"
   }
 }
 ```
 
-**注意事項:**
-- LLM APIの使用により、処理には時間とコストがかかります
-- 大量のPRを処理する場合は、事前に少数でテストすることを推奨します
-- APIキーは環境変数で設定するか、`--api-key`オプションで指定できます
+**重要な注意事項:**
+- 大量処理前に必ず少数でテストしてください
+- API使用料が発生するため、コスト管理にご注意ください
+- 詳細な手順は [問題抽出分析ガイド](docs/problem_extraction_guide.md) をご参照ください
 
 ## 主要コンポーネント
 
