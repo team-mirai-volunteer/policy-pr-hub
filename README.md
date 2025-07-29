@@ -78,6 +78,10 @@ export GITHUB_TOKEN=your_github_token
    
    # または政策分野レポートを生成
    python src/generators/policy_report_main.py --input-dir ../pr-data/prs --output-dir ./output
+   
+   # 問題抽出分析を実行（OpenRouter APIキーが必要）
+   export OPENROUTER_API_KEY=your_openrouter_api_key
+   python src/analyzers/problem_extractor_main.py --input-dir ../pr-data/prs --output problems.json --limit 10
    ```
 
 2. **少量のPRデータのみを収集する場合**
@@ -91,12 +95,53 @@ export GITHUB_TOKEN=your_github_token
 
 個人の実験では自分のGitHub Tokenを使用してください。GitHub Action上での実行は別途secretを設定します。
 
+### 問題抽出分析の使用方法
+
+問題抽出分析機能は、LLM（Large Language Model）を使用してPRデータから「提案者が解決すべき問題だと感じている内容」を自動抽出します。
+
+**必要な準備:**
+- OpenRouter APIキーの取得と設定
+- PRデータの準備（team-mirai-volunteer/pr-dataリポジトリから取得）
+
+**基本的な使用方法:**
+```bash
+# 環境変数でAPIキーを設定
+export OPENROUTER_API_KEY=your_openrouter_api_key
+
+# 全PRデータから問題を抽出（時間とコストがかかります）
+python src/analyzers/problem_extractor_main.py --input-dir ../pr-data/prs --output problems_all.json
+
+# テスト用に少数のPRのみを処理
+python src/analyzers/problem_extractor_main.py --input-dir ../pr-data/prs --output problems_test.json --limit 100
+```
+
+**出力形式:**
+抽出結果は以下の形式のJSONファイルとして保存されます：
+```json
+{
+  "PR番号": {
+    "pr_title": "PRのタイトル",
+    "pr_url": "PRのURL",
+    "problems": ["抽出された問題のリスト"],
+    "explanation": "抽出理由の説明",
+    "extracted_at": "抽出実行日時"
+  }
+}
+```
+
+**注意事項:**
+- LLM APIの使用により、処理には時間とコストがかかります
+- 大量のPRを処理する場合は、事前に少数でテストすることを推奨します
+- APIキーは環境変数で設定するか、`--api-key`オプションで指定できます
+
 ## 主要コンポーネント
 
 このプロジェクトは主に3つの機能コンポーネントで構成されています：
 
 1. **収集機能** (`src/collectors/`): GitHub APIを使用してPRデータを収集
 2. **分析機能** (`src/analyzers/`): 収集したPRデータを分析
+   - セクション分析: マークダウンファイルの構造分析
+   - 問題抽出: LLMを使用した政策的問題の抽出
 3. **レポート生成機能** (`src/generators/`): 分析結果からレポートを生成
 
 ## ドキュメントガイド
@@ -130,6 +175,7 @@ export GITHUB_TOKEN=your_github_token
 - **ラベル分析**: PRに付けられたラベルに基づく分類と傾向分析
 - **政策分野別分析**: 政策分野ごとの改善提案の傾向と特徴を分析
 - **貢献者分析**: 貢献者のパターンを分析
+- **問題抽出分析**: LLMを使用してPRから「提案者が解決すべき問題だと感じている内容」を抽出
 
 ## メンテナー
 
