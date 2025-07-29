@@ -6,6 +6,34 @@
     <title>チームみらい PR可視化ダッシュボード</title>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
+        :root {
+            --bg-primary: #fafafa;
+            --bg-secondary: white;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #30bca7;
+            --accent-dark: #1a8b7a;
+            --border-color: #30bca7;
+            --shadow: rgba(0,0,0,0.1);
+            --plot-bg: #f8f9fa;
+            --card-bg: #f8f9fa;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #1a1a1a;
+                --bg-secondary: #2d2d2d;
+                --text-primary: #e0e0e0;
+                --text-secondary: #b0b0b0;
+                --accent-color: #4dd0e1;
+                --accent-dark: #26c6da;
+                --border-color: #4dd0e1;
+                --shadow: rgba(0,0,0,0.3);
+                --plot-bg: #2d2d2d;
+                --card-bg: #404040;
+            }
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -14,16 +42,16 @@
         
         body {
             font-family: 'Meiryo UI', 'メイリオ', Arial, sans-serif;
-            background: #fafafa;
-            color: #333;
+            background: var(--bg-primary);
+            color: var(--text-primary);
         }
         
         .header {
-            background: #30bca7;
+            background: var(--accent-color);
             color: white;
             padding: 20px;
             border-radius: 0 0 10px 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px var(--shadow);
         }
         
         .header h1 {
@@ -43,15 +71,15 @@
         }
         
         .control-panel {
-            background: white;
+            background: var(--bg-secondary);
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px var(--shadow);
             margin-bottom: 20px;
         }
         
         .control-panel h3 {
-            color: #30bca7;
+            color: var(--accent-color);
             margin-bottom: 15px;
         }
         
@@ -70,16 +98,18 @@
         .filter-group label {
             display: block;
             font-weight: bold;
-            color: #1a8b7a;
+            color: var(--accent-dark);
             margin-bottom: 5px;
         }
         
         select, input[type="text"] {
             padding: 6px 10px;
-            border: 1px solid #30bca7;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             width: 100%;
             font-size: 14px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
         }
         
         button {
@@ -91,23 +121,23 @@
         }
         
         .btn-primary {
-            background: #30bca7;
+            background: var(--accent-color);
             color: white;
             border: none;
         }
         
         .btn-primary:hover {
-            background: #1a8b7a;
+            background: var(--accent-dark);
         }
         
         .btn-secondary {
-            background: white;
-            color: #30bca7;
-            border: 1px solid #30bca7;
+            background: var(--bg-secondary);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
         }
         
         .btn-secondary:hover {
-            background: #f0f0f0;
+            background: var(--bg-primary);
         }
         
         .checkbox-group {
@@ -121,26 +151,26 @@
             align-items: center;
             gap: 5px;
             font-weight: normal;
-            color: #1a8b7a;
+            color: var(--accent-dark);
         }
         
         .main-chart {
-            background: white;
+            background: var(--bg-secondary);
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px var(--shadow);
             padding: 15px;
             margin-bottom: 20px;
         }
         
         .stats-panel {
-            background: white;
+            background: var(--bg-secondary);
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px var(--shadow);
             padding: 20px;
         }
         
         .stats-panel h4 {
-            color: #30bca7;
+            color: var(--accent-color);
             margin-bottom: 15px;
         }
         
@@ -151,13 +181,13 @@
         }
         
         .stat-card {
-            background: #f8f9fa;
+            background: var(--card-bg);
             border-radius: 5px;
             padding: 15px;
         }
         
         .stat-card h5 {
-            color: #1a8b7a;
+            color: var(--accent-dark);
             margin-bottom: 10px;
         }
         
@@ -169,13 +199,13 @@
         #message {
             margin: 10px 0;
             font-weight: bold;
-            color: #1a8b7a;
+            color: var(--accent-dark);
         }
         
         .loading {
             text-align: center;
             padding: 40px;
-            color: #666;
+            color: var(--text-secondary);
         }
     </style>
 </head>
@@ -323,6 +353,8 @@
         
         function processData(data) {
             originalData = data;
+            // 注意: READMEに記載されている1000件制限は現在実装されていません
+            // 必要に応じて以下のコードで制限可能: originalData = data.slice(0, 1000);
             
             // データ前処理
             originalData.forEach(row => {
@@ -527,9 +559,9 @@
                     },
                     text: labelData.map(d => {
                         let text = `スタンス: ${d.stance_lbl}<br>主張強度: ${d.assert_lbl}`;
-                        if (d.subject) text += `<br>件名: ${d.subject}`;
                         if (d.category) text += `<br>カテゴリ: ${d.category}`;
                         if (d.priority) text += `<br>優先度: ${d.priority}`;
+                        if (d.subject) text += `<br><small>件名: ${d.subject}</small>`;
                         return text;
                     }),
                     hoverinfo: 'text',
@@ -538,6 +570,7 @@
                 traces.push(trace);
             });
             
+            const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
             const layout = {
                 title: 'スタンス vs 主張強度 分析（ラベル別色分け）',
                 xaxis: {
@@ -548,7 +581,9 @@
                     range: [-5.5, 5.5],
                     zeroline: true,
                     zerolinecolor: 'lightgray',
-                    zerolinewidth: 2
+                    zerolinewidth: 2,
+                    gridcolor: isDarkMode ? '#404040' : '#e0e0e0',
+                    color: isDarkMode ? '#e0e0e0' : '#333'
                 },
                 yaxis: {
                     title: '主張の強さ（↓ 弱い ／ 強い ↑）',
@@ -558,11 +593,17 @@
                     range: [-5.5, 5.5],
                     zeroline: true,
                     zerolinecolor: 'lightgray',
-                    zerolinewidth: 2
+                    zerolinewidth: 2,
+                    gridcolor: isDarkMode ? '#404040' : '#e0e0e0',
+                    color: isDarkMode ? '#e0e0e0' : '#333'
                 },
-                plot_bgcolor: '#f8f9fa',
+                plot_bgcolor: isDarkMode ? '#2d2d2d' : '#f8f9fa',
+                paper_bgcolor: isDarkMode ? '#2d2d2d' : 'white',
                 height: 550,
-                font: {family: 'Arial, Meiryo UI, sans-serif'},
+                font: {
+                    family: 'Arial, Meiryo UI, sans-serif',
+                    color: isDarkMode ? '#e0e0e0' : '#333'
+                },
                 shapes: [
                     {type: 'line', x0: 0, x1: 0, y0: -5.5, y1: 5.5, 
                      line: {color: 'gray', width: 2, dash: 'dash'}},
