@@ -67,6 +67,7 @@ class ProblemExtractor:
 * 抽出した問題は日本語で出力してください
 * 複数の問題がある場合は分割してください
 * 技術的な修正（typo、バグ修正など）ではなく、政策的・社会的な問題に焦点を当ててください
+* 問題と解決に注目した要約（ダイジェスト）も出力してください
 
 入力: タイトル「高齢者の孤立問題への対策強化」、説明「現在の高齢者支援制度では地域での孤立が解決されていない。より積極的な見守り体制が必要。」
 出力:
@@ -75,14 +76,16 @@ class ProblemExtractor:
     "高齢者の地域での孤立が深刻化している",
     "現在の高齢者支援制度では孤立問題に対応できていない"
   ],
-  "explanation": "PRから明確な問題意識が読み取れます"
+  "explanation": "PRから明確な問題意識が読み取れます",
+  "digest": "高齢者の孤立問題を見守り強化で解決"
 }}
 
-入力: タイトル「typo fixed_row37」、説明「指導対象の指が抜け落ちていたため修正しました」
+入力: タイトル「typo fixed_row37」、説明「指導対象が抜け落ちていたため修正しました」
 出力:
 {{
   "problems": [],
   "explanation": "技術的な修正のため、政策的・社会的問題は含まれていません"
+  "digest": " typo修正"
 }}
 
 PRの内容:
@@ -198,7 +201,7 @@ PRの内容:
         if output_file:
             output_path = Path(output_file)
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(results, f, ensure_ascii=False, indent=2)
             print(f"抽出結果を {output_file} に保存しました")
