@@ -1,4 +1,6 @@
-import { HierarchicalData } from '@/types/hierarchical';
+import { HierarchicalData } from '../types/hierarchical';
+import { extractHierarchicalDataFromWebapp } from './extractHierarchicalData';
+import extractedData from './extracted_hierarchical_data.json';
 
 export const sampleHierarchicalData: HierarchicalData = {
   clusters: [
@@ -48,5 +50,15 @@ export const sampleHierarchicalData: HierarchicalData = {
 };
 
 export async function loadHierarchicalData(): Promise<HierarchicalData> {
-  return sampleHierarchicalData;
+  try {
+    if (extractedData && extractedData.clusters && extractedData.clusters.length > 0) {
+      console.log('Using extracted real hierarchical data');
+      return extractedData as HierarchicalData;
+    }
+    
+    return await extractHierarchicalDataFromWebapp();
+  } catch (error) {
+    console.error('Failed to load real hierarchical data, using sample data:', error);
+    return sampleHierarchicalData;
+  }
 }
