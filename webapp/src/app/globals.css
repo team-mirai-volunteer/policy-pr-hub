@@ -17,6 +17,9 @@
   --purple-bg: #faf5ff;
   --purple-text: #7c2d12;
   --purple-text-light: #a855f7;
+  --orange-bg: #fff7ed;
+  --orange-text: #ea580c;
+  --orange-text-light: #fb923c;
   --code-bg: #f3f4f6;
   --code-text: #374151;
 }
@@ -114,4 +117,16 @@ body {
 .code-bg {
   background: var(--code-bg);
   color: var(--code-text);
+}
+
+.orange-card {
+  background: var(--orange-bg);
+}
+
+.orange-text {
+  color: var(--orange-text);
+}
+
+.orange-text-light {
+  color: var(--orange-text-light);
 }

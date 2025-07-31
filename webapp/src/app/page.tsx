@@ -23,6 +23,10 @@ export default function Home() {
               <div className="font-medium orange-text">散布図分析</div>
               <div className="text-sm orange-text-light">PRを可視化して分析</div>
             </Link>
+            <Link href="/hierarchical" className="block p-4 purple-card rounded-lg hover:opacity-80 transition-opacity">
+              <div className="font-medium purple-text">階層クラスタリング</div>
+              <div className="text-sm purple-text-light">階層的な分析結果を表示</div>
+            </Link>
             <Link href="/pr/108" className="block p-4 blue-card rounded-lg hover:opacity-80 transition-opacity">
               <div className="font-medium blue-text">PR #108</div>
               <div className="text-sm blue-text-light">サンプルPRを見る</div>
