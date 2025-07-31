@@ -63,10 +63,11 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
 
   const renderClusterNode = (node: ClusterNode, depth: number = 0) => {
     const hasChildren = node.children.length > 0
-    const indentClass = depth > 0 ? `ml-${depth * 6}` : ''
+    
+    const indentStyle = depth > 0 ? { paddingLeft: `${depth * 40}px` } : {}
     
     return (
-      <div key={node.id} className={`mb-4 ${indentClass}`}>
+      <div key={node.id} className="mb-4" style={indentStyle}>
         <div className="flex items-start space-x-2">
           {hasChildren && (
             <button
