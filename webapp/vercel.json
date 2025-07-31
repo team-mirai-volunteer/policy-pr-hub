@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/pr/:id",
-      "destination": "/pr/:id/index.html"
+      "destination": "/pr/:id.html"
     }
   ],
   "headers": [
