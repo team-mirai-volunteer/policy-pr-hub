@@ -1,6 +1,29 @@
 import { HierarchicalData } from '../types/hierarchical';
 import { extractHierarchicalDataFromWebapp } from './extractHierarchicalData';
-import extractedData from './extracted_hierarchical_data.json';
+
+interface RawHierarchicalResult {
+  clusters: Array<{
+    level: number;
+    id: string;
+    label: string;
+    takeaway: string;
+    value: number;
+    parent: string;
+    density_rank_percentile: number;
+  }>;
+  arguments: Array<{
+    arg_id: string;
+    argument: string;
+    x: number;
+    y: number;
+    p: number;
+    cluster_ids: string[];
+  }>;
+  [key: string]: unknown;
+}
+
+import hierarchicalResultDataRaw from '../data/hierarchical_result.json';
+const hierarchicalResultData = hierarchicalResultDataRaw as RawHierarchicalResult;
 
 export const sampleHierarchicalData: HierarchicalData = {
   clusters: [
@@ -49,11 +72,31 @@ export const sampleHierarchicalData: HierarchicalData = {
   ]
 };
 
+function transformClustersData(rawClusters: RawHierarchicalResult['clusters']): HierarchicalData {
+  const clusters = rawClusters.map(cluster => ({
+    id: cluster.id,
+    level: cluster.level,
+    parent: cluster.parent === "" ? null : cluster.parent,
+    label: cluster.label,
+    takeaway: cluster.takeaway,
+    value: cluster.value,
+    count: cluster.value
+  }));
+
+  return {
+    clusters,
+    metadata: {
+      totalItems: clusters.length,
+      extractedAt: new Date().toISOString()
+    }
+  };
+}
+
 export async function loadHierarchicalData(): Promise<HierarchicalData> {
   try {
-    if (extractedData && extractedData.clusters && extractedData.clusters.length > 0) {
-      console.log('Using extracted real hierarchical data');
-      return extractedData as HierarchicalData;
+    if (hierarchicalResultData && hierarchicalResultData.clusters && hierarchicalResultData.clusters.length > 0) {
+      console.log('Using real kouchou-ai hierarchical data');
+      return transformClustersData(hierarchicalResultData.clusters);
     }
     
     return await extractHierarchicalDataFromWebapp();
