@@ -3,7 +3,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": "out",
   "installCommand": "npm install",
-  "framework": "nextjs",
   "rewrites": [
     {
       "source": "/pr/:id",
