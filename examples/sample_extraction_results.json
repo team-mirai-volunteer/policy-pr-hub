@@ -1,0 +1,53 @@
+{
+  "1234": {
+    "pr_title": "高齢者の孤立問題への対策強化",
+    "pr_url": "https://github.com/example/repo/pull/1234",
+    "problems": [
+      "高齢者の地域での孤立が深刻化している",
+      "現在の高齢者支援制度では孤立問題に対応できていない",
+      "見守り体制の不備により緊急時の対応が遅れている"
+    ],
+    "explanation": "PRから明確な問題意識が読み取れます。高齢者の孤立問題とその対策の必要性が具体的に述べられています。",
+    "extracted_at": "2025-01-15T10:30:00Z"
+  },
+  "1235": {
+    "pr_title": "子育て支援制度の拡充について",
+    "pr_url": "https://github.com/example/repo/pull/1235",
+    "problems": [
+      "待機児童問題が解決されていない",
+      "保育士の人手不足が深刻化している",
+      "子育て世帯の経済的負担が重い"
+    ],
+    "explanation": "子育て支援に関する複数の問題が明確に指摘されています。",
+    "extracted_at": "2025-01-15T10:31:00Z"
+  },
+  "1236": {
+    "pr_title": "typo fixed_row37",
+    "pr_url": "https://github.com/example/repo/pull/1236",
+    "problems": [],
+    "explanation": "技術的な修正のため、政策的・社会的問題は含まれていません",
+    "extracted_at": "2025-01-15T10:32:00Z"
+  },
+  "1237": {
+    "pr_title": "環境政策の見直しと気候変動対策",
+    "pr_url": "https://github.com/example/repo/pull/1237",
+    "problems": [
+      "気候変動への対応が不十分である",
+      "再生可能エネルギーの普及が遅れている",
+      "環境規制が産業界の実情に合っていない"
+    ],
+    "explanation": "環境政策に関する包括的な問題意識が示されています。",
+    "extracted_at": "2025-01-15T10:33:00Z"
+  },
+  "1238": {
+    "pr_title": "医療制度改革の必要性について",
+    "pr_url": "https://github.com/example/repo/pull/1238",
+    "problems": [
+      "医師の地域偏在が深刻化している",
+      "医療費の増大が社会保障制度を圧迫している",
+      "救急医療体制の整備が不十分である"
+    ],
+    "explanation": "医療制度の構造的な問題が複数指摘されています。",
+    "extracted_at": "2025-01-15T10:34:00Z"
+  }
+}

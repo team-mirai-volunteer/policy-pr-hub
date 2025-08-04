@@ -78,6 +78,10 @@ export GITHUB_TOKEN=your_github_token
    
    # または政策分野レポートを生成
    python src/generators/policy_report_main.py --input-dir ../pr-data/prs --output-dir ./output
+   
+   # 問題抽出分析を実行（OpenRouter APIキーが必要）
+   export OPENROUTER_API_KEY=your_openrouter_api_key
+   python src/analyzers/problem_extractor_main.py --input-dir ../pr-data/prs --output problems.json --limit 10
    ```
 
 2. **少量のPRデータのみを収集する場合**
@@ -91,12 +95,57 @@ export GITHUB_TOKEN=your_github_token
 
 個人の実験では自分のGitHub Tokenを使用してください。GitHub Action上での実行は別途secretを設定します。
 
+### 問題抽出分析の使用方法
+
+問題抽出分析機能は、LLM（Large Language Model）を使用してPRデータから「提案者が解決すべき問題だと感じている内容」を自動抽出します。
+
+**📖 詳細なローカル実行ガイド:** [docs/problem_extraction_guide.md](docs/problem_extraction_guide.md)
+
+**クイックスタート:**
+```bash
+# 1. 依存関係のインストール
+pip install -r requirements.txt
+
+# 2. PRデータの準備（pr-dataリポジトリをクローン）
+git clone https://github.com/team-mirai-volunteer/pr-data.git ../pr-data
+
+# 3. APIキーの設定
+export OPENROUTER_API_KEY=your_openrouter_api_key
+
+# 4. テスト実行（10件のPRで動作確認）
+python src/analyzers/problem_extractor_main.py --input-dir ../pr-data/prs --output test.json --limit 10
+```
+
+**実行時間とコストの目安:**
+- **テスト（100件）**: 5-10分、約$0.26
+- **全データ（約9,688件）**: 8-12時間、約$25-30
+
+**出力形式:**
+```json
+{
+  "1234": {
+    "pr_title": "高齢者支援制度の改善提案",
+    "pr_url": "https://github.com/...",
+    "problems": ["高齢者の地域での孤立が深刻化している"],
+    "explanation": "PRから明確な問題意識が読み取れます",
+    "extracted_at": "2025-01-15T10:30:00Z"
+  }
+}
+```
+
+**重要な注意事項:**
+- 大量処理前に必ず少数でテストしてください
+- API使用料が発生するため、コスト管理にご注意ください
+- 詳細な手順は [問題抽出分析ガイド](docs/problem_extraction_guide.md) をご参照ください
+
 ## 主要コンポーネント
 
 このプロジェクトは主に3つの機能コンポーネントで構成されています：
 
 1. **収集機能** (`src/collectors/`): GitHub APIを使用してPRデータを収集
 2. **分析機能** (`src/analyzers/`): 収集したPRデータを分析
+   - セクション分析: マークダウンファイルの構造分析
+   - 問題抽出: LLMを使用した政策的問題の抽出
 3. **レポート生成機能** (`src/generators/`): 分析結果からレポートを生成
 
 ## ドキュメントガイド
@@ -130,6 +179,7 @@ export GITHUB_TOKEN=your_github_token
 - **ラベル分析**: PRに付けられたラベルに基づく分類と傾向分析
 - **政策分野別分析**: 政策分野ごとの改善提案の傾向と特徴を分析
 - **貢献者分析**: 貢献者のパターンを分析
+- **問題抽出分析**: LLMを使用してPRから「提案者が解決すべき問題だと感じている内容」を抽出
 
 ## メンテナー
 
