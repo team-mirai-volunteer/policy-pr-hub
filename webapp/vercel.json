@@ -3,11 +3,10 @@
   "buildCommand": "npm run build",
   "outputDirectory": "out",
   "installCommand": "npm install",
-  "framework": "nextjs",
   "rewrites": [
     {
       "source": "/pr/:id",
-      "destination": "/pr/:id/index.html"
+      "destination": "/pr/:id.html"
     }
   ],
   "headers": [
