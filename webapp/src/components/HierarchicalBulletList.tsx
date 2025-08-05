@@ -27,7 +27,7 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
       clusterMap.set(cluster.id, {
         ...cluster,
         children: [],
-        isExpanded: false
+        isExpanded: cluster.level === 0
       })
     })
     
@@ -63,6 +63,7 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
 
   const renderClusterNode = (node: ClusterNode, depth: number = 0) => {
     const hasChildren = node.children.length > 0
+    const childCount = node.children.length
     
     const indentStyle = depth > 0 ? { paddingLeft: `${depth * 40}px` } : {}
     
@@ -99,7 +100,17 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
           )}
           <div className="flex-1">
             <h3 className="font-semibold text-primary mb-1">{node.label}</h3>
-            <p className="text-secondary text-sm leading-relaxed">{node.takeaway}</p>
+            {node.isExpanded && hasChildren && (
+              <div className="mb-2">
+                <p className="text-secondary text-sm leading-relaxed mb-1">{node.takeaway}</p>
+                {childCount > 0 && (
+                  <p className="text-xs text-gray-500">子要素: {childCount}件</p>
+                )}
+              </div>
+            )}
+            {!hasChildren && node.takeaway && (
+              <p className="text-secondary text-sm leading-relaxed">{node.takeaway}</p>
+            )}
           </div>
         </div>
         

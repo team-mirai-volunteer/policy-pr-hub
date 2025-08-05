@@ -73,11 +73,13 @@ export const sampleHierarchicalData: HierarchicalData = {
 };
 
 function transformClustersData(rawClusters: RawHierarchicalResult['clusters']): HierarchicalData {
-  const clusters = rawClusters.map(cluster => ({
+  const filteredClusters = rawClusters.filter(cluster => cluster.level !== 0);
+  
+  const clusters = filteredClusters.map(cluster => ({
     id: cluster.id,
-    level: cluster.level,
-    parent: cluster.parent === "" ? null : cluster.parent,
-    label: cluster.label,
+    level: cluster.level - 1,
+    parent: cluster.parent === "0" ? null : cluster.parent,
+    label: cluster.level === 1 ? `${cluster.label} (${cluster.value.toLocaleString()}件)` : cluster.label,
     takeaway: cluster.takeaway,
     value: cluster.value,
     count: cluster.value
