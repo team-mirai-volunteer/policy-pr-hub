@@ -79,11 +79,18 @@ function transformClustersData(rawClusters: RawHierarchicalResult['clusters']): 
     id: cluster.id,
     level: cluster.level - 1,
     parent: cluster.parent === "0" ? null : cluster.parent,
-    label: cluster.level === 1 ? `${cluster.label} (${cluster.value.toLocaleString()}件)` : cluster.label,
+    label: `${cluster.label} (${cluster.value.toLocaleString()}件)`,
     takeaway: cluster.takeaway,
     value: cluster.value,
     count: cluster.value
   }));
+
+  clusters.sort((a, b) => {
+    if (a.level !== b.level) {
+      return a.level - b.level; // Sort by level first
+    }
+    return b.value - a.value; // Then by value descending
+  });
 
   return {
     clusters,
