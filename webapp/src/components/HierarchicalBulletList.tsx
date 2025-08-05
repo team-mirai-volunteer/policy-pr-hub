@@ -15,6 +15,7 @@ interface ClusterNode {
   takeaway: string
   children: ClusterNode[]
   isExpanded: boolean
+  isChildrenExpanded: boolean
 }
 
 export default function HierarchicalBulletList({ data }: HierarchicalBulletListProps) {
@@ -27,7 +28,8 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
       clusterMap.set(cluster.id, {
         ...cluster,
         children: [],
-        isExpanded: cluster.level === 0
+        isExpanded: false,
+        isChildrenExpanded: false
       })
     })
     
@@ -53,6 +55,19 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
       return nodes.map(node => {
         if (node.id === nodeId) {
           return { ...node, isExpanded: !node.isExpanded }
+        }
+        return { ...node, children: updateNode(node.children) }
+      })
+    }
+    
+    setTreeData(updateNode(treeData))
+  }
+
+  const toggleChildrenExpanded = (nodeId: string) => {
+    const updateNode = (nodes: ClusterNode[]): ClusterNode[] => {
+      return nodes.map(node => {
+        if (node.id === nodeId) {
+          return { ...node, isChildrenExpanded: !node.isChildrenExpanded }
         }
         return { ...node, children: updateNode(node.children) }
       })
@@ -100,21 +115,28 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
           )}
           <div className="flex-1">
             <h3 className="font-semibold text-primary mb-1">{node.label}</h3>
-            {node.isExpanded && hasChildren && (
+            {node.isExpanded && (
               <div className="mb-2">
                 <p className="text-secondary text-sm leading-relaxed mb-1">{node.takeaway}</p>
-                {childCount > 0 && (
-                  <p className="text-xs text-gray-500">子要素: {childCount}件</p>
+                {hasChildren && childCount > 0 && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => toggleChildrenExpanded(node.id)}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      {node.isChildrenExpanded ? '子要素を閉じる' : `子要素を表示 (${childCount}件)`}
+                    </button>
+                  </div>
                 )}
               </div>
             )}
-            {!hasChildren && node.takeaway && (
+            {!hasChildren && !node.isExpanded && node.takeaway && (
               <p className="text-secondary text-sm leading-relaxed">{node.takeaway}</p>
             )}
           </div>
         </div>
         
-        {hasChildren && node.isExpanded && (
+        {hasChildren && node.isChildrenExpanded && (
           <div className="mt-3">
             {node.children.map(child => renderClusterNode(child, depth + 1))}
           </div>
