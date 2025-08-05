@@ -19,14 +19,14 @@ export default function Home() {
             URLに <code className="code-bg px-2 py-1 rounded">/pr/[番号]</code> を追加してPRの詳細を表示できます。
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-            <Link href="/scatter" className="block p-4 orange-card rounded-lg hover:opacity-80 transition-opacity">
-              <div className="font-medium orange-text">散布図分析</div>
-              <div className="text-sm orange-text-light">PRを可視化して分析</div>
-            </Link>
             <a href="https://kouchou-ai.team-mir.ai/ee61bb2f-9690-4bd2-9737-1b9cc427ff97/" target="_blank" rel="noopener noreferrer" className="block p-4 blue-card rounded-lg hover:opacity-80 transition-opacity">
               <div className="font-medium blue-text">広聴AI分析</div>
               <div className="text-sm blue-text-light">高度な分析結果を確認</div>
             </a>
+            <Link href="/kouchou-ai" className="block p-4 green-card rounded-lg hover:opacity-80 transition-opacity">
+              <div className="font-medium green-text">広聴AI (実験版)</div>
+              <div className="text-sm green-text-light">カスタマイズされたUI</div>
+            </Link>
             <Link href="/hierarchical" className="block p-4 purple-card rounded-lg hover:opacity-80 transition-opacity">
               <div className="font-medium purple-text">階層クラスタリング</div>
               <div className="text-sm purple-text-light">階層的な分析結果を表示</div>
