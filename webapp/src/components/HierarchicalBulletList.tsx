@@ -79,13 +79,14 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
   const renderClusterNode = (node: ClusterNode, depth: number = 0) => {
     const hasChildren = node.children.length > 0
     const childCount = node.children.length
+    const hasExpandableContent = hasChildren || node.takeaway
     
     const indentStyle = depth > 0 ? { paddingLeft: `${depth * 40}px` } : {}
     
     return (
       <div key={node.id} className="mb-4" style={indentStyle}>
         <div className="flex items-start space-x-2">
-          {hasChildren && (
+          {hasExpandableContent && (
             <button
               onClick={() => toggleExpanded(node.id)}
               className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-blue-600 hover:text-blue-800 transition-colors"
@@ -108,7 +109,7 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
               </svg>
             </button>
           )}
-          {!hasChildren && (
+          {!hasExpandableContent && (
             <div className="w-6 h-6 flex items-center justify-center">
               <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
             </div>
@@ -129,9 +130,6 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
                   </div>
                 )}
               </div>
-            )}
-            {!hasChildren && !node.isExpanded && node.takeaway && (
-              <p className="text-secondary text-sm leading-relaxed">{node.takeaway}</p>
             )}
           </div>
         </div>
