@@ -5,10 +5,10 @@ export default function Home() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-primary mb-4">
-          政策PR Hub
+          改善提案
         </h1>
         <p className="text-lg text-secondary mb-8">
-          チームみらいの政策改善提案プルリクエストを閲覧できます
+          高度な分析結果をシェアし、より良い政策のためのプロトタイプを提供します
         </p>
       </div>
 
@@ -23,21 +23,13 @@ export default function Home() {
               <div className="font-medium orange-text">散布図分析</div>
               <div className="text-sm orange-text-light">PRを可視化して分析</div>
             </Link>
+            <a href="https://kouchou-ai.team-mir.ai/ee61bb2f-9690-4bd2-9737-1b9cc427ff97/" target="_blank" rel="noopener noreferrer" className="block p-4 blue-card rounded-lg hover:opacity-80 transition-opacity">
+              <div className="font-medium blue-text">広聴AI分析</div>
+              <div className="text-sm blue-text-light">高度な分析結果を確認</div>
+            </a>
             <Link href="/hierarchical" className="block p-4 purple-card rounded-lg hover:opacity-80 transition-opacity">
               <div className="font-medium purple-text">階層クラスタリング</div>
               <div className="text-sm purple-text-light">階層的な分析結果を表示</div>
-            </Link>
-            <Link href="/pr/108" className="block p-4 blue-card rounded-lg hover:opacity-80 transition-opacity">
-              <div className="font-medium blue-text">PR #108</div>
-              <div className="text-sm blue-text-light">サンプルPRを見る</div>
-            </Link>
-            <Link href="/pr/1" className="block p-4 green-card rounded-lg hover:opacity-80 transition-opacity">
-              <div className="font-medium green-text">PR #1</div>
-              <div className="text-sm green-text-light">最初のPRを見る</div>
-            </Link>
-            <Link href="/pr/1000" className="block p-4 purple-card rounded-lg hover:opacity-80 transition-opacity">
-              <div className="font-medium purple-text">PR #1000</div>
-              <div className="text-sm purple-text-light">記念すべきPRを見る</div>
             </Link>
           </div>
         </div>
