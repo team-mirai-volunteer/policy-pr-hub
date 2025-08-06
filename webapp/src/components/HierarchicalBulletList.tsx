@@ -27,29 +27,31 @@ interface ClusterNode {
 
 function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10 }: ArgumentsDisplayProps) {
   const [showAll, setShowAll] = useState(false)
-  
+
   const clusterArguments = argumentsList.filter(arg => {
     const adjustedClusterId = clusterId.startsWith('2_') ? clusterId : `2_${clusterId.split('_')[1]}`
     return arg.cluster_ids.includes(adjustedClusterId)
   })
-  
+
   const displayArguments = showAll ? clusterArguments : clusterArguments.slice(0, maxDisplay)
-  
+
   if (clusterArguments.length === 0) {
     return <div className="text-gray-500 text-sm">個別データが見つかりません</div>
   }
-  
+
   return (
     <div className="mt-3 space-y-2">
-      <div className="text-sm font-medium text-gray-700 mb-2">
+      <div className="text-sm font-medium text-gray-200">
         個別データ ({clusterArguments.length}件)
       </div>
-      {displayArguments.map((arg) => (
-        <div key={arg.arg_id} className="bg-gray-50 p-3 rounded-md border-l-4 border-blue-200">
-          <div className="text-xs text-gray-500 mb-1">ID: {arg.arg_id}</div>
-          <div className="text-sm text-gray-800">{arg.argument}</div>
-        </div>
-      ))}
+      <ul>
+        {displayArguments.map((arg) => (
+          <li key={arg.arg_id} className="mb-2 ml-4">
+            {/* <div className="text-xs text-gray-500 mb-1">ID: {arg.arg_id}</div> */}
+            <div className="text-sm text-gray-200">{arg.argument}</div>
+          </li>
+        ))}
+      </ul>
       {clusterArguments.length > maxDisplay && (
         <button
           onClick={() => setShowAll(!showAll)}
@@ -67,13 +69,13 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
 
   useEffect(() => {
     const clusterMap = new Map<string, ClusterNode>()
-    
+
     data.clusters.forEach(cluster => {
       const clusterArguments = data.arguments?.filter(arg => {
         const targetClusterId = cluster.level === 1 ? `2_${cluster.id.split('_')[1]}` : cluster.id
         return arg.cluster_ids.includes(targetClusterId)
       }) || []
-      
+
       clusterMap.set(cluster.id, {
         ...cluster,
         children: [],
@@ -82,11 +84,11 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
         arguments: clusterArguments
       })
     })
-    
+
     const rootNodes: ClusterNode[] = []
     data.clusters.forEach(cluster => {
       const node = clusterMap.get(cluster.id)!
-      
+
       if (cluster.parent === null) {
         rootNodes.push(node)
       } else {
@@ -96,7 +98,7 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
         }
       }
     })
-    
+
     setTreeData(rootNodes)
   }, [data])
 
@@ -109,7 +111,7 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
         return { ...node, children: updateNode(node.children) }
       })
     }
-    
+
     setTreeData(updateNode(treeData))
   }
 
@@ -122,7 +124,7 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
         return { ...node, children: updateNode(node.children) }
       })
     }
-    
+
     setTreeData(updateNode(treeData))
   }
 
@@ -131,9 +133,9 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
     const childCount = node.children.length
     const hasArguments = node.level === 1 && node.arguments && node.arguments.length > 0
     const hasExpandableContent = hasChildren || node.takeaway || hasArguments
-    
+
     const indentStyle = depth > 0 ? { paddingLeft: `${depth * 40}px` } : {}
-    
+
     return (
       <div key={node.id} className="mb-4" style={indentStyle}>
         <div className="flex items-start space-x-2">
@@ -144,9 +146,8 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
               aria-label={node.isExpanded ? "折りたたむ" : "展開する"}
             >
               <svg
-                className={`w-4 h-4 transform transition-transform ${
-                  node.isExpanded ? 'rotate-90' : ''
-                }`}
+                className={`w-4 h-4 transform transition-transform ${node.isExpanded ? 'rotate-90' : ''
+                  }`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -194,17 +195,17 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
             )}
           </div>
         </div>
-        
+
         {hasChildren && node.isChildrenExpanded && (
           <div className="mt-3">
             {node.children.map(child => renderClusterNode(child, depth + 1))}
           </div>
         )}
-        
+
         {hasArguments && node.isChildrenExpanded && data.arguments && (
           <div className="mt-3" style={{ paddingLeft: `${(depth + 1) * 40}px` }}>
-            <ArgumentsDisplay 
-              clusterId={node.id} 
+            <ArgumentsDisplay
+              clusterId={node.id}
               arguments={data.arguments}
             />
           </div>
@@ -223,7 +224,7 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
           政策提案の階層的な分析結果です。項目をクリックして詳細を展開できます。
         </p>
       </div>
-      
+
       <div className="space-y-2">
         {treeData.map(node => renderClusterNode(node))}
       </div>
