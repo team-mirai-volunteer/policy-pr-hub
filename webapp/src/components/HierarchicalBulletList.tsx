@@ -1,10 +1,16 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { HierarchicalData } from '@/types/hierarchical'
+import { HierarchicalData, HierarchicalArgument } from '@/types/hierarchical'
 
 interface HierarchicalBulletListProps {
   data: HierarchicalData
+}
+
+interface ArgumentsDisplayProps {
+  clusterId: string
+  arguments: HierarchicalArgument[]
+  maxDisplay?: number
 }
 
 interface ClusterNode {
@@ -15,6 +21,45 @@ interface ClusterNode {
   takeaway: string
   children: ClusterNode[]
   isExpanded: boolean
+  isChildrenExpanded: boolean
+  arguments?: HierarchicalArgument[]
+}
+
+function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10 }: ArgumentsDisplayProps) {
+  const [showAll, setShowAll] = useState(false)
+  
+  const clusterArguments = argumentsList.filter(arg => {
+    const adjustedClusterId = clusterId.startsWith('2_') ? clusterId : `2_${clusterId.split('_')[1]}`
+    return arg.cluster_ids.includes(adjustedClusterId)
+  })
+  
+  const displayArguments = showAll ? clusterArguments : clusterArguments.slice(0, maxDisplay)
+  
+  if (clusterArguments.length === 0) {
+    return <div className="text-gray-500 text-sm">個別データが見つかりません</div>
+  }
+  
+  return (
+    <div className="mt-3 space-y-2">
+      <div className="text-sm font-medium text-gray-700 mb-2">
+        個別データ ({clusterArguments.length}件)
+      </div>
+      {displayArguments.map((arg) => (
+        <div key={arg.arg_id} className="bg-gray-50 p-3 rounded-md border-l-4 border-blue-200">
+          <div className="text-xs text-gray-500 mb-1">ID: {arg.arg_id}</div>
+          <div className="text-sm text-gray-800">{arg.argument}</div>
+        </div>
+      ))}
+      {clusterArguments.length > maxDisplay && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="text-xs text-blue-600 hover:text-blue-800 underline"
+        >
+          {showAll ? '表示を減らす' : `さらに表示 (残り${clusterArguments.length - maxDisplay}件)`}
+        </button>
+      )}
+    </div>
+  )
 }
 
 export default function HierarchicalBulletList({ data }: HierarchicalBulletListProps) {
@@ -24,10 +69,17 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
     const clusterMap = new Map<string, ClusterNode>()
     
     data.clusters.forEach(cluster => {
+      const clusterArguments = data.arguments?.filter(arg => {
+        const targetClusterId = cluster.level === 1 ? `2_${cluster.id.split('_')[1]}` : cluster.id
+        return arg.cluster_ids.includes(targetClusterId)
+      }) || []
+      
       clusterMap.set(cluster.id, {
         ...cluster,
         children: [],
-        isExpanded: false
+        isExpanded: false,
+        isChildrenExpanded: false,
+        arguments: clusterArguments
       })
     })
     
@@ -61,15 +113,31 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
     setTreeData(updateNode(treeData))
   }
 
+  const toggleChildrenExpanded = (nodeId: string) => {
+    const updateNode = (nodes: ClusterNode[]): ClusterNode[] => {
+      return nodes.map(node => {
+        if (node.id === nodeId) {
+          return { ...node, isChildrenExpanded: !node.isChildrenExpanded }
+        }
+        return { ...node, children: updateNode(node.children) }
+      })
+    }
+    
+    setTreeData(updateNode(treeData))
+  }
+
   const renderClusterNode = (node: ClusterNode, depth: number = 0) => {
     const hasChildren = node.children.length > 0
+    const childCount = node.children.length
+    const hasArguments = node.level === 1 && node.arguments && node.arguments.length > 0
+    const hasExpandableContent = hasChildren || node.takeaway || hasArguments
     
     const indentStyle = depth > 0 ? { paddingLeft: `${depth * 40}px` } : {}
     
     return (
       <div key={node.id} className="mb-4" style={indentStyle}>
         <div className="flex items-start space-x-2">
-          {hasChildren && (
+          {hasExpandableContent && (
             <button
               onClick={() => toggleExpanded(node.id)}
               className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-blue-600 hover:text-blue-800 transition-colors"
@@ -92,20 +160,53 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
               </svg>
             </button>
           )}
-          {!hasChildren && (
+          {!hasExpandableContent && (
             <div className="w-6 h-6 flex items-center justify-center">
               <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
             </div>
           )}
           <div className="flex-1">
             <h3 className="font-semibold text-primary mb-1">{node.label}</h3>
-            <p className="text-secondary text-sm leading-relaxed">{node.takeaway}</p>
+            {node.isExpanded && (
+              <div className="mb-2">
+                <p className="text-secondary text-sm leading-relaxed mb-1">{node.takeaway}</p>
+                {hasChildren && childCount > 0 && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => toggleChildrenExpanded(node.id)}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      {node.isChildrenExpanded ? '子要素を閉じる' : `子要素を表示 (${childCount}件)`}
+                    </button>
+                  </div>
+                )}
+                {hasArguments && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => toggleChildrenExpanded(node.id)}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      {node.isChildrenExpanded ? '個別データを閉じる' : `個別データを表示 (${node.arguments?.length || 0}件)`}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
         
-        {hasChildren && node.isExpanded && (
+        {hasChildren && node.isChildrenExpanded && (
           <div className="mt-3">
             {node.children.map(child => renderClusterNode(child, depth + 1))}
+          </div>
+        )}
+        
+        {hasArguments && node.isChildrenExpanded && data.arguments && (
+          <div className="mt-3" style={{ paddingLeft: `${(depth + 1) * 40}px` }}>
+            <ArgumentsDisplay 
+              clusterId={node.id} 
+              arguments={data.arguments}
+            />
           </div>
         )}
       </div>
