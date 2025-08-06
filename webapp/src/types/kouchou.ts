@@ -28,8 +28,8 @@ export type Result = {
   arguments: Argument[];
   clusters: Cluster[];
   comments: Comments;
-  propertyMap: Record<string, any>;
-  translations: Record<string, any>;
+  propertyMap: Record<string, unknown>;
+  translations: Record<string, unknown>;
   overview: string;
   config: Config;
   comment_num: number;

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Overview } from "../../components/Overview";
 import { Reporter } from "../../components/Reporter";
 import type { Meta, Result } from "../../types/kouchou";
@@ -123,9 +124,9 @@ export default function KouchouAIPage() {
               このページは実験的な機能です。実際のデータ分析機能は今後追加予定です。
             </p>
             <p className="mt-2">
-              <a href="/" className="text-blue-600 hover:underline">
+              <Link href="/" className="text-blue-600 hover:underline">
                 ← ホームページに戻る
-              </a>
+              </Link>
             </p>
           </div>
         </div>
