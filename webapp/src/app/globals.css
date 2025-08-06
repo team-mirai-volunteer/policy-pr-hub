@@ -130,3 +130,15 @@ body {
 .orange-text-light {
   color: var(--orange-text-light);
 }
+
+.green-card {
+  background: var(--green-bg);
+}
+
+.green-text {
+  color: var(--green-text);
+}
+
+.green-text-light {
+  color: var(--green-text-light);
+}
