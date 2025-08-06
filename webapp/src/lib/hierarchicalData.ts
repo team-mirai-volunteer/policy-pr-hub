@@ -69,10 +69,11 @@ export const sampleHierarchicalData: HierarchicalData = {
       label: "デジタル化の推進",
       takeaway: "AI技術の倫理的導入とデジタル化の推進が重要な課題として挙げられている。"
     }
-  ]
+  ],
+  arguments: []
 };
 
-function transformClustersData(rawClusters: RawHierarchicalResult['clusters']): HierarchicalData {
+function transformClustersData(rawClusters: RawHierarchicalResult['clusters'], rawArguments: RawHierarchicalResult['arguments']): HierarchicalData {
   const filteredClusters = rawClusters.filter(cluster => cluster.level !== 0);
   
   const clusters = filteredClusters.map(cluster => ({
@@ -92,8 +93,18 @@ function transformClustersData(rawClusters: RawHierarchicalResult['clusters']): 
     return b.value - a.value; // Then by value descending
   });
 
+  const argumentsList = rawArguments.map(arg => ({
+    arg_id: arg.arg_id,
+    argument: arg.argument,
+    x: arg.x,
+    y: arg.y,
+    p: arg.p,
+    cluster_ids: arg.cluster_ids
+  }));
+
   return {
     clusters,
+    arguments: argumentsList,
     metadata: {
       totalItems: clusters.length,
       extractedAt: new Date().toISOString()
@@ -105,12 +116,12 @@ export async function loadHierarchicalData(): Promise<HierarchicalData> {
   try {
     if (hierarchicalResultData && hierarchicalResultData.clusters && hierarchicalResultData.clusters.length > 0) {
       console.log('Using real kouchou-ai hierarchical data');
-      return transformClustersData(hierarchicalResultData.clusters);
+      return transformClustersData(hierarchicalResultData.clusters, hierarchicalResultData.arguments || []);
     }
     
     return await extractHierarchicalDataFromWebapp();
   } catch (error) {
     console.error('Failed to load real hierarchical data, using sample data:', error);
-    return sampleHierarchicalData;
+    return { ...sampleHierarchicalData, arguments: [] };
   }
 }

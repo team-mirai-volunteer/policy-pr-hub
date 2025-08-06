@@ -1,10 +1,16 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { HierarchicalData } from '@/types/hierarchical'
+import { HierarchicalData, HierarchicalArgument } from '@/types/hierarchical'
 
 interface HierarchicalBulletListProps {
   data: HierarchicalData
+}
+
+interface ArgumentsDisplayProps {
+  clusterId: string
+  arguments: HierarchicalArgument[]
+  maxDisplay?: number
 }
 
 interface ClusterNode {
@@ -16,6 +22,44 @@ interface ClusterNode {
   children: ClusterNode[]
   isExpanded: boolean
   isChildrenExpanded: boolean
+  arguments?: HierarchicalArgument[]
+}
+
+function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10 }: ArgumentsDisplayProps) {
+  const [showAll, setShowAll] = useState(false)
+  
+  const clusterArguments = argumentsList.filter(arg => {
+    const adjustedClusterId = clusterId.startsWith('2_') ? clusterId : `2_${clusterId.split('_')[1]}`
+    return arg.cluster_ids.includes(adjustedClusterId)
+  })
+  
+  const displayArguments = showAll ? clusterArguments : clusterArguments.slice(0, maxDisplay)
+  
+  if (clusterArguments.length === 0) {
+    return <div className="text-gray-500 text-sm">個別データが見つかりません</div>
+  }
+  
+  return (
+    <div className="mt-3 space-y-2">
+      <div className="text-sm font-medium text-gray-700 mb-2">
+        個別データ ({clusterArguments.length}件)
+      </div>
+      {displayArguments.map((arg) => (
+        <div key={arg.arg_id} className="bg-gray-50 p-3 rounded-md border-l-4 border-blue-200">
+          <div className="text-xs text-gray-500 mb-1">ID: {arg.arg_id}</div>
+          <div className="text-sm text-gray-800">{arg.argument}</div>
+        </div>
+      ))}
+      {clusterArguments.length > maxDisplay && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="text-xs text-blue-600 hover:text-blue-800 underline"
+        >
+          {showAll ? '表示を減らす' : `さらに表示 (残り${clusterArguments.length - maxDisplay}件)`}
+        </button>
+      )}
+    </div>
+  )
 }
 
 export default function HierarchicalBulletList({ data }: HierarchicalBulletListProps) {
@@ -25,11 +69,17 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
     const clusterMap = new Map<string, ClusterNode>()
     
     data.clusters.forEach(cluster => {
+      const clusterArguments = data.arguments?.filter(arg => {
+        const targetClusterId = cluster.level === 1 ? `2_${cluster.id.split('_')[1]}` : cluster.id
+        return arg.cluster_ids.includes(targetClusterId)
+      }) || []
+      
       clusterMap.set(cluster.id, {
         ...cluster,
         children: [],
         isExpanded: false,
-        isChildrenExpanded: false
+        isChildrenExpanded: false,
+        arguments: clusterArguments
       })
     })
     
@@ -79,7 +129,8 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
   const renderClusterNode = (node: ClusterNode, depth: number = 0) => {
     const hasChildren = node.children.length > 0
     const childCount = node.children.length
-    const hasExpandableContent = hasChildren || node.takeaway
+    const hasArguments = node.level === 1 && node.arguments && node.arguments.length > 0
+    const hasExpandableContent = hasChildren || node.takeaway || hasArguments
     
     const indentStyle = depth > 0 ? { paddingLeft: `${depth * 40}px` } : {}
     
@@ -129,6 +180,16 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
                     </button>
                   </div>
                 )}
+                {hasArguments && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => toggleChildrenExpanded(node.id)}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      {node.isChildrenExpanded ? '個別データを閉じる' : `個別データを表示 (${node.arguments?.length || 0}件)`}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -137,6 +198,15 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
         {hasChildren && node.isChildrenExpanded && (
           <div className="mt-3">
             {node.children.map(child => renderClusterNode(child, depth + 1))}
+          </div>
+        )}
+        
+        {hasArguments && node.isChildrenExpanded && data.arguments && (
+          <div className="mt-3" style={{ paddingLeft: `${(depth + 1) * 40}px` }}>
+            <ArgumentsDisplay 
+              clusterId={node.id} 
+              arguments={data.arguments}
+            />
           </div>
         )}
       </div>
