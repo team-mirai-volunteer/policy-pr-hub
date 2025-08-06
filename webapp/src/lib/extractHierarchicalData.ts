@@ -53,7 +53,7 @@ function extractJSONFromScript(script: string): HierarchicalData | null {
     const clustersMatch = script.match(clustersRegex);
     if (clustersMatch) {
       const clusters = JSON.parse(clustersMatch[1]);
-      return { clusters: transformClusters(clusters) };
+      return { clusters: transformClusters(clusters), arguments: [] };
     }
   } catch {
     console.log('JSON parsing failed, continuing to next method');
@@ -80,7 +80,7 @@ function extractJSONFromWindowVar(match: string): HierarchicalData | null {
 function extractFromVisibleContent(html: string): HierarchicalData | null {
   const clusterDescriptions = extractClusterDescriptions(html);
   if (clusterDescriptions.length > 0) {
-    return { clusters: clusterDescriptions };
+    return { clusters: clusterDescriptions, arguments: [] };
   }
   return null;
 }
@@ -143,12 +143,12 @@ function transformToHierarchicalData(data: unknown): HierarchicalData {
   
   const dataObj = data as Record<string, unknown>;
   if (dataObj.clusters && Array.isArray(dataObj.clusters)) {
-    return { clusters: transformClusters(dataObj.clusters) };
+    return { clusters: transformClusters(dataObj.clusters), arguments: [] };
   }
   if (dataObj.hierarchical_result && typeof dataObj.hierarchical_result === 'object' && dataObj.hierarchical_result !== null) {
     const hierarchicalResult = dataObj.hierarchical_result as Record<string, unknown>;
     if (hierarchicalResult.clusters && Array.isArray(hierarchicalResult.clusters)) {
-      return { clusters: transformClusters(hierarchicalResult.clusters) };
+      return { clusters: transformClusters(hierarchicalResult.clusters), arguments: [] };
     }
   }
   return createEnhancedSampleData();
@@ -285,6 +285,7 @@ function createEnhancedSampleData(): HierarchicalData {
         label: "医療提供体制の最適化",
         takeaway: "地域医療連携の強化と、医療資源の効率的な配分により、質の高い医療サービスの持続的な提供を実現する必要があります。"
       }
-    ]
+    ],
+    arguments: []
   };
 }
