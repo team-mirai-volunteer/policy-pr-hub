@@ -102,11 +102,26 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
     setTreeData(rootNodes)
   }, [data])
 
+  const closeAllDescendants = (nodes: ClusterNode[]): ClusterNode[] => {
+    return nodes.map(node => ({
+      ...node,
+      isExpanded: false,
+      isChildrenExpanded: false,
+      children: closeAllDescendants(node.children)
+    }))
+  }
+
   const toggleExpanded = (nodeId: string) => {
     const updateNode = (nodes: ClusterNode[]): ClusterNode[] => {
       return nodes.map(node => {
         if (node.id === nodeId) {
-          return { ...node, isExpanded: !node.isExpanded }
+          const newIsExpanded = !node.isExpanded
+          return { 
+            ...node, 
+            isExpanded: newIsExpanded,
+            isChildrenExpanded: newIsExpanded ? node.isChildrenExpanded : false,
+            children: newIsExpanded ? node.children : closeAllDescendants(node.children)
+          }
         }
         return { ...node, children: updateNode(node.children) }
       })
