@@ -28,6 +28,11 @@ interface ClusterNode {
 function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10 }: ArgumentsDisplayProps) {
   const [showAll, setShowAll] = useState(false)
 
+  const extractPRNumber = (url: string): number => {
+    const match = url.match(/\/pull\/(\d+)$/)
+    return match ? parseInt(match[1]) : 0
+  }
+
   const clusterArguments = argumentsList.filter(arg => {
     const adjustedClusterId = clusterId.startsWith('2_') ? clusterId : `2_${clusterId.split('_')[1]}`
     return arg.cluster_ids.includes(adjustedClusterId)
@@ -45,12 +50,27 @@ function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10
         個別データ ({clusterArguments.length}件)
       </div>
       <ul>
-        {displayArguments.map((arg) => (
-          <li key={arg.arg_id} className="mb-2 ml-4">
-            {/* <div className="text-xs text-gray-500 mb-1">ID: {arg.arg_id}</div> */}
-            <div className="text-sm text-gray-200">{arg.argument}</div>
-          </li>
-        ))}
+        {displayArguments.map((arg) => {
+          const prNumber = arg.url ? extractPRNumber(arg.url) : null
+          return (
+            <li key={arg.arg_id} className="mb-2 ml-4">
+              {/* <div className="text-xs text-gray-500 mb-1">ID: {arg.arg_id}</div> */}
+              <div className="text-sm text-gray-200 flex items-start gap-2">
+                <span className="flex-1">{arg.argument}</span>
+                {prNumber && (
+                  <a
+                    href={arg.url!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300 underline text-xs whitespace-nowrap"
+                  >
+                    #{prNumber}
+                  </a>
+                )}
+              </div>
+            </li>
+          )
+        })}
       </ul>
       {clusterArguments.length > maxDisplay && (
         <button
