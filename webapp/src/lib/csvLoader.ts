@@ -1,9 +1,4 @@
-import Papa from 'papaparse';
-
-export interface ProblemMapping {
-  text: string;
-  url: string;
-}
+import problemMappingsData from '@/data/problemMappings.json';
 
 let problemMappings: Map<string, string> | null = null;
 
@@ -13,19 +8,9 @@ export async function loadProblemMappings(): Promise<Map<string, string>> {
   }
 
   try {
-    const response = await fetch('/problems.csv');
-    const csvText = await response.text();
-    
-    const results = Papa.parse<ProblemMapping>(csvText, {
-      header: true,
-      skipEmptyLines: true,
-    });
-
     problemMappings = new Map();
-    results.data.forEach((row) => {
-      if (row.text && row.url) {
-        problemMappings!.set(row.text.trim(), row.url.trim());
-      }
+    Object.entries(problemMappingsData).forEach(([text, url]) => {
+      problemMappings!.set(text.trim(), url.trim());
     });
 
     return problemMappings;
