@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { HierarchicalData, HierarchicalArgument } from '@/types/hierarchical'
+import { loadProblemMappings, getPRUrlForArgument } from '@/lib/csvLoader'
 
 interface HierarchicalBulletListProps {
   data: HierarchicalData
@@ -27,6 +28,13 @@ interface ClusterNode {
 
 function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10 }: ArgumentsDisplayProps) {
   const [showAll, setShowAll] = useState(false)
+  const [mappingsLoaded, setMappingsLoaded] = useState(false)
+
+  useEffect(() => {
+    loadProblemMappings().then(() => {
+      setMappingsLoaded(true)
+    })
+  }, [])
 
   const extractPRNumber = (url: string): number => {
     const match = url.match(/\/pull\/(\d+)$/)
@@ -51,15 +59,16 @@ function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10
       </div>
       <ul>
         {displayArguments.map((arg) => {
-          const prNumber = arg.url ? extractPRNumber(arg.url) : null
+          const prUrl = mappingsLoaded ? getPRUrlForArgument(arg.argument) : null
+          const prNumber = prUrl ? extractPRNumber(prUrl) : null
           return (
             <li key={arg.arg_id} className="mb-2 ml-4">
               {/* <div className="text-xs text-gray-500 mb-1">ID: {arg.arg_id}</div> */}
               <div className="text-sm text-gray-200 flex items-start gap-2">
                 <span className="flex-1">{arg.argument}</span>
-                {prNumber && (
+                {prNumber && prUrl && (
                   <a
-                    href={arg.url!}
+                    href={prUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-400 hover:text-blue-300 underline text-xs whitespace-nowrap"
