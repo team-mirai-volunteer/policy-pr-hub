@@ -29,12 +29,29 @@ interface ClusterNode {
 function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10 }: ArgumentsDisplayProps) {
   const [showAll, setShowAll] = useState(false)
   const [mappingsLoaded, setMappingsLoaded] = useState(false)
+  const [mappingStats, setMappingStats] = useState({ total: 0, matched: 0 })
 
   useEffect(() => {
     loadProblemMappings().then(() => {
       setMappingsLoaded(true)
     })
   }, [])
+
+  useEffect(() => {
+    if (mappingsLoaded) {
+      const clusterArguments = argumentsList.filter(arg => {
+        const adjustedClusterId = clusterId.startsWith('2_') ? clusterId : `2_${clusterId.split('_')[1]}`
+        return arg.cluster_ids.includes(adjustedClusterId)
+      })
+      
+      const matched = clusterArguments.filter(arg => getPRUrlForArgument(arg.argument, arg.arg_id)).length
+      setMappingStats({ total: clusterArguments.length, matched })
+      
+      if (matched < clusterArguments.length) {
+        console.log(`Cluster ${clusterId}: ${matched}/${clusterArguments.length} arguments have PR links (${(matched/clusterArguments.length*100).toFixed(1)}%)`)
+      }
+    }
+  }, [mappingsLoaded, clusterId, argumentsList])
 
   const extractPRNumber = (url: string): number => {
     const match = url.match(/\/pull\/(\d+)$/)
@@ -56,11 +73,21 @@ function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10
     <div className="mt-3 space-y-2">
       <div className="text-sm font-medium text-gray-200">
         個別データ ({clusterArguments.length}件)
+        {mappingsLoaded && mappingStats.total > 0 && (
+          <span className="ml-2 text-xs text-gray-400">
+            PRリンク: {mappingStats.matched}/{mappingStats.total} ({(mappingStats.matched/mappingStats.total*100).toFixed(1)}%)
+          </span>
+        )}
       </div>
       <ul>
         {displayArguments.map((arg) => {
-          const prUrl = mappingsLoaded ? getPRUrlForArgument(arg.argument) : null
+          const prUrl = mappingsLoaded ? getPRUrlForArgument(arg.argument, arg.arg_id) : null
           const prNumber = prUrl ? extractPRNumber(prUrl) : null
+          
+          if (mappingsLoaded && !prUrl) {
+            console.log(`No PR URL found for arg_id: "${arg.arg_id}"`);
+          }
+          
           return (
             <li key={arg.arg_id} className="mb-2 ml-4">
               {/* <div className="text-xs text-gray-500 mb-1">ID: {arg.arg_id}</div> */}

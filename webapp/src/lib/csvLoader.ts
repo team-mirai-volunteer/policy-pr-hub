@@ -1,28 +1,41 @@
-import problemMappingsData from '@/data/problemMappings.json';
+import argIdMappingsData from '@/data/argIdMappings.json';
 
-let problemMappings: Map<string, string> | null = null;
+let argIdMappings: Map<string, string> | null = null;
 
 export async function loadProblemMappings(): Promise<Map<string, string>> {
-  if (problemMappings) {
-    return problemMappings;
+  if (argIdMappings) {
+    return argIdMappings;
   }
 
   try {
-    problemMappings = new Map();
-    Object.entries(problemMappingsData).forEach(([text, url]) => {
-      problemMappings!.set(text.trim(), url.trim());
+    argIdMappings = new Map();
+    
+    Object.entries(argIdMappingsData).forEach(([argId, url]) => {
+      const cleanArgId = argId.trim();
+      const cleanUrl = url.trim();
+      argIdMappings!.set(cleanArgId, cleanUrl);
     });
 
-    return problemMappings;
+    console.log(`Loaded ${argIdMappings.size} arg_id to PR URL mappings`);
+    return argIdMappings;
   } catch (error) {
-    console.error('Failed to load problem mappings:', error);
+    console.error('Failed to load arg_id mappings:', error);
     return new Map();
   }
 }
 
-export function getPRUrlForArgument(argumentText: string): string | null {
-  if (!problemMappings) {
+export function getPRUrlForArgument(argumentText: string, argId?: string): string | null {
+  if (!argIdMappings) {
     return null;
   }
-  return problemMappings.get(argumentText.trim()) || null;
+  
+  if (argId) {
+    const url = argIdMappings.get(argId);
+    if (url) {
+      return url;
+    }
+  }
+  
+  console.log(`No mapping found for arg_id: "${argId}"`);
+  return null;
 }
