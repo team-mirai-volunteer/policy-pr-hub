@@ -5,6 +5,7 @@ export interface HierarchicalArgument {
   y: number;
   p: number;
   cluster_ids: string[];
+  url: string | null;
 }
 
 export interface HierarchicalCluster {

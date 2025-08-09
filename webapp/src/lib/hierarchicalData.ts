@@ -18,6 +18,7 @@ interface RawHierarchicalResult {
     y: number;
     p: number;
     cluster_ids: string[];
+    url: string | null;
   }>;
   [key: string]: unknown;
 }
@@ -99,7 +100,8 @@ function transformClustersData(rawClusters: RawHierarchicalResult['clusters'], r
     x: arg.x,
     y: arg.y,
     p: arg.p,
-    cluster_ids: arg.cluster_ids
+    cluster_ids: arg.cluster_ids,
+    url: arg.url
   }));
 
   return {
