@@ -1,10 +1,10 @@
 "use client";
 
-import { SelectChartButton } from "@/components/charts/SelectChartButton";
-import { AttributeFilterDialog, type AttributeFilters } from "@/components/report/AttributeFilterDialog";
-import { Chart } from "@/components/report/Chart";
-import { ClusterOverview } from "@/components/report/ClusterOverview";
-import { DisplaySettingDialog } from "@/components/report/DisplaySettingDialog";
+import { SelectChartButton } from "@/components/KouchouAI/charts/SelectChartButton";
+import { AttributeFilterDialog, type AttributeFilters } from "@/components/KouchouAI/report/AttributeFilterDialog";
+import { Chart } from "@/components/KouchouAI/report/Chart";
+import { ClusterOverview } from "@/components/KouchouAI/report/ClusterOverview";
+import { DisplaySettingDialog } from "@/components/KouchouAI/report/DisplaySettingDialog";
 import type { Cluster, Result } from "@/type";
 import { useEffect, useMemo, useState } from "react";
 import type { AttributeMeta } from "./AttributeFilterDialog";

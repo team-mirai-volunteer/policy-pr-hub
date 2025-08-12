@@ -1,4 +1,4 @@
-import { getRelativeUrl } from "@/app/utils/image-src";
+import { getRelativeUrl } from "@/app/utils/KouchouAI/utils/image-src";
 import {
   DialogBody,
   DialogCloseTrigger,
@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogRoot,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/components/KouchouAI/ui/dialog";
 import { Button, Heading, Image, Text } from "@chakra-ui/react";
 import { CircleHelpIcon } from "lucide-react";
 

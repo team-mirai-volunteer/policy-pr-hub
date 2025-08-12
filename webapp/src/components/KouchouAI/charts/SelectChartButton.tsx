@@ -1,5 +1,5 @@
-import { AllViewIcon, DenseViewIcon, HierarchyViewIcon } from "@/components/icons/ViewIcons";
-import { Tooltip } from "@/components/ui/tooltip";
+import { AllViewIcon, DenseViewIcon, HierarchyViewIcon } from "@/components/KouchouAI/icons/ViewIcons";
+import { Tooltip } from "@/components/KouchouAI/ui/tooltip";
 import { Box, Button, HStack, Icon, SegmentGroup, Stack } from "@chakra-ui/react";
 import { CogIcon, Filter, FullscreenIcon } from "lucide-react"; // Filter アイコンをインポート
 import type React from "react";

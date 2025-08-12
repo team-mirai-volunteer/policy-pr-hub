@@ -1,5 +1,5 @@
-import { Checkbox } from "@/components/ui/checkbox";
-import { DialogBody, DialogContent, DialogFooter, DialogRoot } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/KouchouAI/ui/checkbox";
+import { DialogBody, DialogContent, DialogFooter, DialogRoot } from "@/components/KouchouAI/ui/dialog";
 import { Box, Button, Flex, Heading, Input, Text, Wrap, WrapItem } from "@chakra-ui/react";
 import React, { useCallback, useMemo, useState } from "react";
 import { FixedSizeList as List } from "react-window";

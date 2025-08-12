@@ -10,15 +10,22 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@chakra-ui/react": "^3.24.2",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.52.1",
     "@types/react-plotly.js": "^2.6.3",
     "dotenv": "^17.2.1",
+    "framer-motion": "^12.23.12",
+    "lucide-react": "^0.539.0",
     "next": "15.4.4",
     "plotly.js": "^3.0.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-icons": "^5.5.0",
     "react-plotly.js": "^2.6.0",
+    "react-window": "^1.8.11",
     "tsx": "^4.20.3"
   },
   "devDependencies": {

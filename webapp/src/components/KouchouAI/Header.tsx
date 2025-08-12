@@ -1,6 +1,6 @@
 "use client";
 
-import { BroadlisteningGuide } from "@/components/report/BroadlisteningGuide";
+import { BroadlisteningGuide } from "@/components/KouchouAI/report/BroadlisteningGuide";
 import { HStack, Image } from "@chakra-ui/react";
 
 export function Header() {

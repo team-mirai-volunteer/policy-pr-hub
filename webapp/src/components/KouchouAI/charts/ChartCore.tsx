@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingBar } from "@/components/report/LoadingBar";
+import { LoadingBar } from "@/components/KouchouAI/report/LoadingBar";
 import jaLocale from "@/lib/plotly-locale-ja";
 import dynamic from "next/dynamic";
 

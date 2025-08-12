@@ -1,6 +1,6 @@
 "use client";
 
-import { getClusterNum } from "@/app/utils/cluster-num";
+import { getClusterNum } from "@/app/utils/KouchouAI/utils/cluster-num";
 import {
   DrawerBackdrop,
   DrawerBody,
@@ -9,7 +9,7 @@ import {
   DrawerHeader,
   DrawerRoot,
   DrawerTitle,
-} from "@/components/ui/drawer";
+} from "@/components/KouchouAI/ui/drawer";
 import {
   TimelineConnector,
   TimelineContent,
@@ -17,8 +17,8 @@ import {
   TimelineItem,
   TimelineRoot,
   TimelineTitle,
-} from "@/components/ui/timeline";
-import { Tooltip } from "@/components/ui/tooltip";
+} from "@/components/KouchouAI/ui/timeline";
+import { Tooltip } from "@/components/KouchouAI/ui/tooltip";
 import type { Result } from "@/type";
 import {
   Box,

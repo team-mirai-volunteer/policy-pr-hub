@@ -1,4 +1,4 @@
-import { BreadcrumbLink, BreadcrumbRoot } from "@/components/ui/breadcrumb";
+import { BreadcrumbLink, BreadcrumbRoot } from "@/components/KouchouAI/ui/breadcrumb";
 import type { Cluster } from "@/type";
 import { Box, Text } from "@chakra-ui/react";
 

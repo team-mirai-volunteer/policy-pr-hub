@@ -1,6 +1,6 @@
-import { ScatterChart } from "@/components/charts/ScatterChart";
-import { TreemapChart } from "@/components/charts/TreemapChart";
-import { Tooltip } from "@/components/ui/tooltip";
+import { ScatterChart } from "@/components/KouchouAI/charts/ScatterChart";
+import { TreemapChart } from "@/components/KouchouAI/charts/TreemapChart";
+import { Tooltip } from "@/components/KouchouAI/ui/tooltip";
 import type { Result } from "@/type";
 import { Box, Button, Dialog, HStack, Icon, Portal } from "@chakra-ui/react";
 import { Minimize2 } from "lucide-react";

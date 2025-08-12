@@ -1,6 +1,6 @@
-import { DialogBody, DialogCloseTrigger, DialogContent, DialogFooter, DialogRoot } from "@/components/ui/dialog";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
+import { DialogBody, DialogCloseTrigger, DialogContent, DialogFooter, DialogRoot } from "@/components/KouchouAI/ui/dialog";
+import { Slider } from "@/components/KouchouAI/ui/slider";
+import { Switch } from "@/components/KouchouAI/ui/switch";
 import { Box, Button, HStack, Spacer, Text } from "@chakra-ui/react";
 import { useState } from "react";
 

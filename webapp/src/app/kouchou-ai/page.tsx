@@ -1,10 +1,11 @@
+import React from "react";
 import { Footer } from "@/components/KouchouAI/Footer";
 import { Header } from "@/components/KouchouAI/Header";
-import { Analysis } from "@/components/report/Analysis";
-import { BackButton } from "@/components/report/BackButton";
-import { ClientContainer } from "@/components/report/ClientContainer";
-import { Overview } from "@/components/report/Overview";
-import { Reporter } from "@/components/reporter/Reporter";
+import { Analysis } from "@/components/KouchouAI/report/Analysis";
+import { BackButton } from "@/components/KouchouAI/report/BackButton";
+import { ClientContainer } from "@/components/KouchouAI/report/ClientContainer";
+import { Overview } from "@/components/KouchouAI/report/Overview";
+import { Reporter } from "@/components/KouchouAI/reporter/Reporter";
 import type { Meta, Report, Result } from "@/type";
 import { ReportVisibility } from "@/type";
 import { Box, Separator } from "@chakra-ui/react";
@@ -42,7 +43,7 @@ export async function generateStaticParams() {
     }
 
     return slugs;
-  } catch (_e) {
+  } catch {
     return [];
   }
 }
@@ -51,14 +52,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try {
     const slug = (await params).slug;
     const metaResponse = await fetch(`${getApiBaseUrl()}/meta/metadata.json`, {
-      next: { tags: ["meta"] },
+      next: { tags: ["meta"] } as any,
     });
     const resultResponse = await fetch(`${getApiBaseUrl()}/reports/${slug}`, {
       headers: {
         "x-api-key": process.env.NEXT_PUBLIC_PUBLIC_API_KEY || "",
         "Content-Type": "application/json",
       },
-      next: { tags: [`report-${slug}`] },
+      next: { tags: [`report-${slug}`] } as any,
     });
     if (!metaResponse.ok || !resultResponse.ok) {
       return {};
@@ -95,7 +96,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 
     return metaData;
-  } catch (_e) {
+  } catch {
     return {};
   }
 }
@@ -103,14 +104,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function Page({ params }: PageProps) {
   const slug = (await params).slug;
   const metaResponse = await fetch(`${getApiBaseUrl()}/meta/metadata.json`, {
-    next: { tags: ["meta"] },
+    next: { tags: ["meta"] } as any,
   });
   const resultResponse = await fetch(`${getApiBaseUrl()}/reports/${slug}`, {
     headers: {
       "x-api-key": process.env.NEXT_PUBLIC_PUBLIC_API_KEY || "",
       "Content-Type": "application/json",
     },
-    next: { tags: [`report-${slug}`] },
+    next: { tags: [`report-${slug}`] } as any,
   });
 
   if (metaResponse.status === 404 || resultResponse.status === 404) {
