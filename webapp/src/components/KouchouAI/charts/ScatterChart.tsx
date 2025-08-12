@@ -213,7 +213,7 @@ export function ScatterChart({
               opacity: Array(notMatching.length > 0 ? notMatching.length : allClusterArguments.length).fill(0.5), // 半透明
             },
             text: Array(notMatching.length > 0 ? notMatching.length : allClusterArguments.length).fill(""), // ホバーテキストなし
-            type: "scattergl",
+            type: "scatter",
             hoverinfo: "skip", // ホバー表示を無効化
             showlegend: false,
             // argumentのメタデータを埋め込み
@@ -247,7 +247,7 @@ export function ScatterChart({
               const urlText = config?.enable_source_link && arg.url ? `<br><b>🔗 クリックしてソースを見る</b>` : "";
               return `<b>${cluster.label}</b><br>${argumentText}${urlText}`;
             }),
-            type: "scattergl",
+            type: "scatter",
             hoverinfo: "text",
             hovertemplate: "%{text}<extra></extra>",
             hoverlabel: {

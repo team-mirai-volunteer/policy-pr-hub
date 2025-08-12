@@ -4,8 +4,11 @@ import {
 } from "@chakra-ui/react";
 import { forwardRef } from "react";
 
-export type ButtonProps = ChakraButtonProps;
+export type ButtonProps = ChakraButtonProps & {
+  asChild?: boolean;
+};
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
-  return <ChakraButton ref={ref} {...props} />;
+  const { asChild, ...rest } = props;
+  return <ChakraButton ref={ref} {...rest} />;
 });

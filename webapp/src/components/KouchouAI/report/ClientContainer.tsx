@@ -25,6 +25,7 @@ export function ClientContainer({ result }: Props) {
   const [isDenseGroupEnabled, setIsDenseGroupEnabled] = useState(true);
   const [showClusterLabels, setShowClusterLabels] = useState(true);
   const [treemapLevel, setTreemapLevel] = useState("0");
+  const [mounted, setMounted] = useState(false);
 
   // --- 標本データ生成 ---
   const samples = useMemo(() => {
@@ -114,6 +115,11 @@ export function ClientContainer({ result }: Props) {
     const { filtered, isEmpty } = getDenseClusters(result.clusters || [], maxDensity, minValue);
     setIsDenseGroupEnabled(!isEmpty);
   }, [maxDensity, minValue, result.clusters]);
+
+  // --- マウント状態管理 ---
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // --- 属性・密度フィルタ適用 ---
   function updateFilteredResult(
@@ -259,6 +265,11 @@ export function ClientContainer({ result }: Props) {
   const handleOpenAttributeFilter = () => setOpenAttributeFilter(true);
   const handleExitFullscreen = () => setIsFullscreen(false);
   const handleTreeZoom = (value: string) => setTreemapLevel(value);
+
+  // --- マウント待ち ---
+  if (!mounted) {
+    return <div>Loading...</div>;
+  }
 
   // --- UI ---
   return (
