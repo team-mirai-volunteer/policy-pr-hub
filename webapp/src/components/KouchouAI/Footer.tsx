@@ -94,21 +94,6 @@ export function Footer({ meta }: Props) {
                   <ArrowUpRight />
                 </a>
               </Button>
-              <Dialog title="謝辞" trigger={<Button variant="secondary">謝辞</Button>}>
-                広聴AIは{" "}
-                <Link href="https://ai.objectives.institute/" target="_blank" rel="noopener noreferrer">
-                  AI Objectives Institute
-                </Link>{" "}
-                が開発した{" "}
-                <Link
-                  href="https://github.com/AIObjectives/talk-to-the-city-reports"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Talk to the City
-                </Link>{" "}
-                を参考に開発されています。ライセンスに基づいてソースコードを一部活用し、機能追加や改善を実施しています。
-              </Dialog>
             </Flex>
           </Flex>
         </Flex>
@@ -188,11 +173,6 @@ export function Footer({ meta }: Props) {
                 </a>
               </Button>
             )}
-            <Dialog title="免責" trigger={<Button variant="ghost">免責</Button>}>
-              このレポート内容に関する質問や意見はレポート発行責任者へお問い合わせください。
-              <br />
-              大規模言語モデル（LLM）にはバイアスがあり、信頼性の低い結果を生成することが知られています。私たちはこれらの問題を軽減する方法に積極的に取り組んでいますが、現段階ではいかなる保証も提供することはできません。特に重要な決定を下す際は、本アプリの出力結果のみに依存せず、必ず内容を検証してください。
-            </Dialog>
           </Flex>
         </Flex>
       </Box>
