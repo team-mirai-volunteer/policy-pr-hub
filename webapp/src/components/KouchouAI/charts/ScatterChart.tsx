@@ -13,6 +13,7 @@ type Props = {
   // フィルター適用後の引数IDのリストを受け取り、フィルターに該当しないポイントの表示を変更する
   filteredArgumentIds?: string[];
   config?: Config; // ソースリンク機能の有効/無効を制御するため
+  isFullScreen?: boolean; // 全体画面表示かどうかの制御フラグ
 };
 
 export function ScatterChart({
@@ -23,6 +24,7 @@ export function ScatterChart({
   showClusterLabels,
   filteredArgumentIds, // フィルター済みIDリスト（フィルター条件に合致する引数のID）
   config,
+  isFullScreen = false, // デフォルトは非全画面
 }: Props) {
   // 全ての引数を表示するため、argumentListをそのまま使用
   // フィルター条件に合致しないものは後で灰色表示する
@@ -208,70 +210,70 @@ export function ScatterChart({
     const notMatchingData =
       notMatching.length > 0 || allElementsFiltered || isDensityFiltered // 密度フィルターされた場合も表示
         ? {
-            x: isDensityFiltered 
-              ? allClusterArguments.map((arg) => arg.x) // 密度フィルターされた場合は全ての引数を表示
-              : notMatching.length > 0 ? notMatching.map((arg) => arg.x) : allClusterArguments.map((arg) => arg.x),
-            y: isDensityFiltered
-              ? allClusterArguments.map((arg) => arg.y) // 密度フィルターされた場合は全ての引数を表示
-              : notMatching.length > 0 ? notMatching.map((arg) => arg.y) : allClusterArguments.map((arg) => arg.y),
-            mode: "markers",
-            marker: {
-              size: isDensityFiltered ? 2 : 7, // 密度フィルターされたクラスターはもっと小さく
-              color: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill("#999999"), // 濃い灰色で不透明に
-              opacity: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill(isDensityFiltered ? 1 : 0.5), // 密度フィルターされたクラスターは不透明
-            },
-            text: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill(""), // ホバーテキストなし
-            type: "scatter",
-            hoverinfo: "skip", // ホバー表示を無効化
-            showlegend: false,
-            // argumentのメタデータを埋め込み
-            customdata: isDensityFiltered 
-              ? allClusterArguments.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })) // 密度フィルターされた場合は全ての引数
-              : notMatching.length > 0
-                ? notMatching.map((arg) => ({ arg_id: arg.arg_id, url: arg.url }))
-                : allClusterArguments.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })),
-          }
+          x: isDensityFiltered
+            ? allClusterArguments.map((arg) => arg.x) // 密度フィルターされた場合は全ての引数を表示
+            : notMatching.length > 0 ? notMatching.map((arg) => arg.x) : allClusterArguments.map((arg) => arg.x),
+          y: isDensityFiltered
+            ? allClusterArguments.map((arg) => arg.y) // 密度フィルターされた場合は全ての引数を表示
+            : notMatching.length > 0 ? notMatching.map((arg) => arg.y) : allClusterArguments.map((arg) => arg.y),
+          mode: "markers",
+          marker: {
+            size: isDensityFiltered ? 2 : 7, // 密度フィルターされたクラスターはもっと小さく
+            color: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill("#999999"), // 濃い灰色で不透明に
+            opacity: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill(isDensityFiltered ? 1 : 0.5), // 密度フィルターされたクラスターは不透明
+          },
+          text: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill(""), // ホバーテキストなし
+          type: "scatter",
+          hoverinfo: "skip", // ホバー表示を無効化
+          showlegend: false,
+          // argumentのメタデータを埋め込み
+          customdata: isDensityFiltered
+            ? allClusterArguments.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })) // 密度フィルターされた場合は全ての引数
+            : notMatching.length > 0
+              ? notMatching.map((arg) => ({ arg_id: arg.arg_id, url: arg.url }))
+              : allClusterArguments.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })),
+        }
         : null;
 
     // フィルター対象のアイテム（前面に描画）
     const matchingData =
       matching.length > 0 && !isDensityFiltered // 密度フィルターされたクラスターはmatchingDataを表示しない
         ? {
-            x: matching.map((arg) => arg.x),
-            y: matching.map((arg) => arg.y),
-            mode: "markers",
-            marker: {
-              size: 10, // 統一サイズでシンプルに
-              color: Array(matching.length).fill(clusterColorMap[cluster.id]),
-              opacity: Array(matching.length).fill(1), // 不透明
-              line: config?.enable_source_link
-                ? {
-                    width: 2,
-                    color: "#ffffff",
-                  }
-                : undefined,
+          x: matching.map((arg) => arg.x),
+          y: matching.map((arg) => arg.y),
+          mode: "markers",
+          marker: {
+            size: 10, // 統一サイズでシンプルに
+            color: Array(matching.length).fill(clusterColorMap[cluster.id]),
+            opacity: Array(matching.length).fill(1), // 不透明
+            line: config?.enable_source_link
+              ? {
+                width: 2,
+                color: "#ffffff",
+              }
+              : undefined,
+          },
+          text: matching.map((arg) => {
+            const argumentText = arg.argument.replace(/(.{30})/g, "$1<br />");
+            const urlText = config?.enable_source_link && arg.url ? `<br><b>🔗 クリックしてソースを見る</b>` : "";
+            return `<b>${cluster.label}</b><br>${argumentText}${urlText}`;
+          }),
+          type: "scatter",
+          hoverinfo: "text",
+          hovertemplate: "%{text}<extra></extra>",
+          hoverlabel: {
+            align: "left" as const,
+            bgcolor: "white",
+            bordercolor: clusterColorMap[cluster.id],
+            font: {
+              size: 12,
+              color: "#333",
             },
-            text: matching.map((arg) => {
-              const argumentText = arg.argument.replace(/(.{30})/g, "$1<br />");
-              const urlText = config?.enable_source_link && arg.url ? `<br><b>🔗 クリックしてソースを見る</b>` : "";
-              return `<b>${cluster.label}</b><br>${argumentText}${urlText}`;
-            }),
-            type: "scatter",
-            hoverinfo: "text",
-            hovertemplate: "%{text}<extra></extra>",
-            hoverlabel: {
-              align: "left" as const,
-              bgcolor: "white",
-              bordercolor: clusterColorMap[cluster.id],
-              font: {
-                size: 12,
-                color: "#333",
-              },
-            },
-            showlegend: false,
-            // argumentのメタデータを埋め込み
-            customdata: matching.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })),
-          }
+          },
+          showlegend: false,
+          // argumentのメタデータを埋め込み
+          customdata: matching.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })),
+        }
         : null;
 
     return {
@@ -286,11 +288,11 @@ export function ScatterChart({
   // 描画用のデータセットを作成（密度フィルターされた点を背景に）
   const densityFilteredData = [];
   const normalData = [];
-  
+
   clusterDataSets.forEach((dataSet) => {
     // @ts-expect-error densityFilteredプロパティが存在する前提で処理（TypeScript型定義に追加済み）
     const isDensityFiltered = dataSet.cluster.densityFiltered;
-    
+
     const dataToAdd = [];
 
     // フィルター対象外のデータ（背面に描画）
@@ -316,7 +318,7 @@ export function ScatterChart({
             color: isDensityFiltered ? "#999999" : clusterColorMap[dataSet.cluster.id], // 密度フィルターされたクラスターは濃い灰色で不透明
             opacity: isDensityFiltered ? 1 : 1, // 密度フィルターされたクラスターも不透明
           },
-          text: isDensityFiltered ? 
+          text: isDensityFiltered ?
             Array(clusterArguments.length).fill("") : // 密度フィルターされたクラスターはホバーテキストなし
             clusterArguments.map(
               (arg) => `<b>${dataSet.cluster.label}</b><br>${arg.argument.replace(/(.{30})/g, "$1<br />")}`,
@@ -346,33 +348,33 @@ export function ScatterChart({
       normalData.push(...dataToAdd);
     }
   });
-  
+
   // 密度フィルターされたデータを最初に（背景に）、通常のデータを後に（前景に）描画
   const plotData = [...densityFilteredData, ...normalData];
 
   // === ラベル配置のためのヘルパー関数群 ===
-  
+
   /** 
    * 全データ点のバウンディングボックスを計算
    * @returns データ点を囲む矩形の座標
    */
   function calculateDataBounds() {
     if (allArguments.length === 0) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-    
+
     let minX = allArguments[0].x;
     let maxX = allArguments[0].x;
     let minY = allArguments[0].y;
     let maxY = allArguments[0].y;
-    
+
     allArguments.forEach(arg => {
       minX = Math.min(minX, arg.x);
       maxX = Math.max(maxX, arg.x);
       minY = Math.min(minY, arg.y);
       maxY = Math.max(maxY, arg.y);
     });
-    
+
     // バウンディングボックスにマージンを追加してデータ点から離す
-    const margin = 20;
+    const margin = 0;
     return {
       minX: minX - margin,
       maxX: maxX + margin,
@@ -382,44 +384,81 @@ export function ScatterChart({
   }
 
   /**
+   * 対象クラスタのデータ点ごとにバウンディングボックスを計算し、その中央点を返す
+   * @param targetClusterId 対象クラスタID
+   * @returns バウンディングボックスの中央点座標
+   */
+  function calculateClusterBoundingBoxCenter(targetClusterId: string): { centerX: number; centerY: number } | null {
+    // 対象クラスタに属するデータ点を取得
+    const clusterArguments = allArguments.filter(arg => arg.cluster_ids.includes(targetClusterId));
+
+    if (clusterArguments.length === 0) {
+      console.warn(`クラスタ ${targetClusterId} にデータ点が見つかりません`);
+      return null;
+    }
+
+    // バウンディングボックスを計算
+    let minX = clusterArguments[0].x;
+    let maxX = clusterArguments[0].x;
+    let minY = clusterArguments[0].y;
+    let maxY = clusterArguments[0].y;
+
+    clusterArguments.forEach(arg => {
+      minX = Math.min(minX, arg.x);
+      maxX = Math.max(maxX, arg.x);
+      minY = Math.min(minY, arg.y);
+      maxY = Math.max(maxY, arg.y);
+    });
+
+    // バウンディングボックスの中央点を計算
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+
+    return { centerX, centerY };
+  }
+
+
+  /**
    * バウンディングボックスの外側にラベル配置エリアを定義
    * @param bounds データ点のバウンディングボックス
    * @returns 4つの配置エリア（上下左右）
    */
   function defineLabelAreas(bounds: ReturnType<typeof calculateDataBounds>) {
-    const distanceFromData = 30; // データ点からラベルエリアまでの距離
-    const labelHeight = annotationFontsize + 16; // ラベルの高さ（フォント + パディング）
-    
-    return [
+    const distanceFromData = 0; // データ点からラベルエリアまでの距離
+
+    const areas = [
       // 上側エリア
-      { 
-        x: bounds.minX, 
-        y: bounds.maxY + distanceFromData, 
-        width: bounds.maxX - bounds.minX, 
-        direction: 'top' as const 
+      {
+        x: bounds.minX + (bounds.maxX - bounds.minX) / 2, // 上側の中央に配置
+        y: bounds.maxY + distanceFromData,
+        width: bounds.maxX - bounds.minX,
+        direction: 'top' as const
       },
       // 下側エリア  
-      { 
-        x: bounds.minX, 
-        y: bounds.minY - distanceFromData - labelHeight, 
-        width: bounds.maxX - bounds.minX, 
-        direction: 'bottom' as const 
+      {
+        x: bounds.minX + (bounds.maxX - bounds.minX) / 2, // 下側の中央に配置
+        y: bounds.minY - distanceFromData,
+        width: bounds.maxX - bounds.minX,
+        direction: 'bottom' as const
       },
       // 右側エリア
-      { 
-        x: bounds.maxX + distanceFromData, 
-        y: bounds.minY, 
-        height: bounds.maxY - bounds.minY, 
-        direction: 'right' as const 
+      {
+        x: bounds.maxX + distanceFromData + 10, // 10ピクセルだけ右に
+        y: bounds.minY + (bounds.maxY - bounds.minY) / 2, // 右側の中央に配置
+        height: bounds.maxY - bounds.minY,
+        direction: 'right' as const
       },
       // 左側エリア
-      { 
-        x: bounds.minX - distanceFromData - annotationLabelWidth, 
-        y: bounds.minY, 
-        height: bounds.maxY - bounds.minY, 
-        direction: 'left' as const 
+      {
+        x: bounds.minX - distanceFromData - 10, // 10ピクセルだけ左に
+        y: bounds.minY + (bounds.maxY - bounds.minY) / 2, // 左側の中央に配置
+        height: bounds.maxY - bounds.minY,
+        direction: 'left' as const
       },
     ];
+    
+    return areas;
   }
 
   /**
@@ -440,37 +479,56 @@ export function ScatterChart({
   function calculateOptimalLabelPositions() {
     const validClusters = getValidClustersForLabels();
     if (validClusters.length === 0) return [];
-    
+
     const bounds = calculateDataBounds();
     const labelAreas = defineLabelAreas(bounds);
-    const labelMargin = 10; // ラベル同士の間隔
     const labelHeight = annotationFontsize + 16;
-    
+
     const labelPositions = [];
-    let currentAreaIndex = 0;
-    let currentPositionInArea = 0;
+
+    // 左右に均等配置：バウンディングボックスの高さをラベル数で割る
+    const dataHeight = bounds.maxY - bounds.minY;
+    const leftLabels = [];
+    const rightLabels = [];
     
-    for (const dataSet of validClusters) {
-      const area = labelAreas[currentAreaIndex % labelAreas.length];
-      const { labelX, labelY } = calculateSingleLabelPosition(
-        area, 
-        currentPositionInArea, 
-        labelMargin, 
-        labelHeight
-      );
+    // 左右に分ける
+    for (let i = 0; i < validClusters.length; i++) {
+      const dataSet = validClusters[i];
+      const sideIndex = i % 2; // 左右交互（0=右側、1=左側）
       
-      labelPositions.push({ dataSet, labelX, labelY });
-      
-      // エリア内での次の位置へ、エリアが埋まったら次のエリアへ
-      const shouldMoveToNextArea = checkIfAreaIsFull(area, currentPositionInArea, labelMargin, labelHeight);
-      if (shouldMoveToNextArea) {
-        currentAreaIndex++;
-        currentPositionInArea = 0;
+      if (sideIndex === 0) {
+        rightLabels.push(dataSet);
       } else {
-        currentPositionInArea++;
+        leftLabels.push(dataSet);
       }
     }
     
+    // 右側の均等配置（少し広がりを持たせる）
+    rightLabels.forEach((dataSet, index) => {
+      const rightArea = labelAreas[2]; // right area
+      const expandedHeight = dataHeight * 1.2; // 20%拡張
+      const startY = bounds.minY - expandedHeight * 0.1; // 開始位置を少し上に
+      const yPosition = startY + (expandedHeight / (rightLabels.length + 1)) * (index + 1);
+      labelPositions.push({ 
+        dataSet, 
+        labelX: rightArea.x, 
+        labelY: yPosition 
+      });
+    });
+    
+    // 左側の均等配置（少し広がりを持たせる）
+    leftLabels.forEach((dataSet, index) => {
+      const leftArea = labelAreas[3]; // left area
+      const expandedHeight = dataHeight * 1.2; // 20%拡張
+      const startY = bounds.minY - expandedHeight * 0.1; // 開始位置を少し上に
+      const yPosition = startY + (expandedHeight / (leftLabels.length + 1)) * (index + 1);
+      labelPositions.push({ 
+        dataSet, 
+        labelX: leftArea.x, 
+        labelY: yPosition 
+      });
+    });
+
     return labelPositions;
   }
 
@@ -478,91 +536,73 @@ export function ScatterChart({
    * 単一ラベルの配置位置を計算
    */
   function calculateSingleLabelPosition(
-    area: ReturnType<typeof defineLabelAreas>[0], 
-    positionIndex: number, 
-    margin: number, 
+    area: ReturnType<typeof defineLabelAreas>[0],
+    positionIndex: number,
+    margin: number,
     labelHeight: number
   ) {
     if (area.direction === 'top' || area.direction === 'bottom') {
       // 水平方向に配置
-      const availableWidth = Math.max(area.width - annotationLabelWidth, annotationLabelWidth);
-      const labelX = area.x + (positionIndex * (annotationLabelWidth + margin)) % availableWidth;
+      const labelX = area.x + positionIndex * (annotationLabelWidth + margin);
       const labelY = area.y;
       return { labelX, labelY };
     } else {
       // 垂直方向に配置
       const labelX = area.x;
-      const availableHeight = Math.max(area.height! - labelHeight, labelHeight);
-      const labelY = area.y + (positionIndex * (labelHeight + margin)) % availableHeight;
+      const labelY = area.y + positionIndex * (labelHeight + margin);
       return { labelX, labelY };
     }
   }
 
-  /**
-   * エリアが満杯かどうかをチェック
-   */
-  function checkIfAreaIsFull(
-    area: ReturnType<typeof defineLabelAreas>[0], 
-    positionIndex: number, 
-    margin: number, 
-    labelHeight: number
-  ): boolean {
-    if (area.direction === 'top' || area.direction === 'bottom') {
-      const availableWidth = area.width - annotationLabelWidth;
-      return positionIndex * (annotationLabelWidth + margin) >= availableWidth;
-    } else {
-      const availableHeight = area.height! - labelHeight;
-      return positionIndex * (labelHeight + margin) >= availableHeight;
-    }
-  }
 
   /**
-   * 単一アノテーションオブジェクトを作成
-   * デバッグしやすいように引き出し線の設定を分離
+   * 単一アノテーションオブジェクトを作成（引き出し線でのラベル作り）
+   * 全体画面でのみ有効な機能として実装
    */
-  function createSingleAnnotation(dataSet: any, labelX: number, labelY: number): Partial<Annotations> {
+  function createSingleAnnotation(dataSet: { cluster: Cluster; centerX: number; centerY: number }, labelX: number, labelY: number, isFullScreen: boolean = false): Partial<Annotations> {
     // フィルター状態の判定
-    // @ts-expect-error allFilteredプロパティが存在する前提で処理
-    const isAllFiltered = filteredArgumentIds && 
+    const isAllFiltered = filteredArgumentIds &&
       (separateDataByFilter(dataSet.cluster).matching.length === 0 || dataSet.cluster.allFiltered);
-    
+
     // 背景色の決定
     const bgColor = isAllFiltered
       ? clusterColorMapA[dataSet.cluster.id].replace(/[0-9a-f]{2}$/i, "cc")
       : clusterColorMapA[dataSet.cluster.id];
-    
-    // クラスター中心座標（引き出し線の接続先）
-    const clusterCenterX = dataSet.centerX;
-    const clusterCenterY = dataSet.centerY;
-    
+
+    // バウンディングボックスの中央点を取得（引き出し線の接続先）
+    const boundingBoxCenter = calculateClusterBoundingBoxCenter(dataSet.cluster.id);
+
+    // フォールバック：バウンディングボックスが計算できない場合は従来の重心を使用
+    const clusterCenterX = boundingBoxCenter?.centerX ?? dataSet.centerX;
+    const clusterCenterY = boundingBoxCenter?.centerY ?? dataSet.centerY;
+
     // 引き出し線の色（クラスターと同じ色）
     const arrowColor = clusterColorMap[dataSet.cluster.id];
-    
-    console.log(`ラベル配置: "${dataSet.cluster.label}" - ラベル位置(${labelX}, ${labelY}) -> クラスター中心(${clusterCenterX}, ${clusterCenterY})`);
-    
+
+
     return {
-      // ラベルの位置
-      x: labelX,
-      y: labelY,
+      // 引き出し線の先端（クラスターの中央点）
+      x: clusterCenterX,
+      y: clusterCenterY,
       xref: "x",
       yref: "y",
-      
+
       // ラベルの内容
       text: wrapLabelText(dataSet.cluster.label),
-      
-      // 引き出し線の設定
-      showarrow: true,
-      arrowhead: 0, // 矢印なし（線のみ）
-      arrowsize: 1,
-      arrowwidth: 2,
-      arrowcolor: arrowColor,
-      
-      // 引き出し線の接続先（クラスター中心）
-      ax: clusterCenterX, 
-      ay: clusterCenterY,
-      axref: "x",
-      ayref: "y",
-      
+
+      // 引き出し線の設定（全体画面でのみ有効）
+      showarrow: isFullScreen,
+      arrowhead: isFullScreen ? 0 : undefined, // 矢印なし（線のみ）
+      arrowsize: isFullScreen ? 1 : undefined,
+      arrowwidth: isFullScreen ? 2 : undefined,
+      arrowcolor: isFullScreen ? arrowColor : undefined,
+
+      // 引き出し線の起点（ラベルの位置）
+      ax: isFullScreen ? labelX : clusterCenterX,
+      ay: isFullScreen ? labelY : clusterCenterY,
+      axref: isFullScreen ? "x" : "x",
+      ayref: isFullScreen ? "y" : "y",
+
       // ラベルのスタイル
       font: {
         color: "white",
@@ -578,9 +618,9 @@ export function ScatterChart({
 
   // === メインのアノテーション生成 ===
   const annotations: Partial<Annotations>[] = showClusterLabels
-    ? calculateOptimalLabelPositions().map(({ dataSet, labelX, labelY }) => 
-        createSingleAnnotation(dataSet, labelX, labelY)
-      )
+    ? calculateOptimalLabelPositions().map(({ dataSet, labelX, labelY }) =>
+      createSingleAnnotation(dataSet, labelX, labelY, true) // 常に引き出し線を表示
+    )
     : [];
 
   return (
