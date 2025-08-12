@@ -473,19 +473,19 @@ export function ScatterChart({
   }
 
   /**
-   * 引き出し線の長さを計算
+   * 引き出し線の長さの二乗を計算（計算効率とペナライズ効果向上）
    * @param labelX ラベルのX座標
    * @param labelY ラベルのY座標
    * @param clusterX クラスターのX座標
    * @param clusterY クラスターのY座標
-   * @returns 引き出し線の長さ
+   * @returns 引き出し線の長さの二乗
    */
-  function calculateLineLength(labelX: number, labelY: number, clusterX: number, clusterY: number): number {
-    return Math.sqrt(Math.pow(labelX - clusterX, 2) + Math.pow(labelY - clusterY, 2));
+  function calculateLineSquaredLength(labelX: number, labelY: number, clusterX: number, clusterY: number): number {
+    return Math.pow(labelX - clusterX, 2) + Math.pow(labelY - clusterY, 2);
   }
 
   /**
-   * 貪欲法でラベル位置とクラスターの最適な割り当てを計算
+   * 繰り返し最小選択法：全ての組み合わせから最短距離を選択（二乗和最小化）
    * @param labelPositions ラベル位置の配列
    * @param clusters クラスターの配列
    * @returns 最適化された割り当て
@@ -498,9 +498,9 @@ export function ScatterChart({
     const usedClusters = new Set<number>();
     const usedPositions = new Set<number>();
 
-    // 各ラベル位置に対して最も近いクラスターを割り当て
+    // 各ラベル位置に対して最も二乗距離が短いクラスターを割り当て
     while (usedPositions.size < Math.min(labelPositions.length, clusters.length)) {
-      let bestDistance = Number.MAX_VALUE;
+      let bestSquaredDistance = Number.MAX_VALUE;
       let bestLabelIndex = -1;
       let bestClusterIndex = -1;
 
@@ -511,15 +511,15 @@ export function ScatterChart({
         for (let clusterIdx = 0; clusterIdx < clusters.length; clusterIdx++) {
           if (usedClusters.has(clusterIdx)) continue;
 
-          const distance = calculateLineLength(
+          const squaredDistance = calculateLineSquaredLength(
             labelPositions[labelIdx].labelX,
             labelPositions[labelIdx].labelY,
             clusters[clusterIdx].centerX,
             clusters[clusterIdx].centerY
           );
 
-          if (distance < bestDistance) {
-            bestDistance = distance;
+          if (squaredDistance < bestSquaredDistance) {
+            bestSquaredDistance = squaredDistance;
             bestLabelIndex = labelIdx;
             bestClusterIndex = clusterIdx;
           }
@@ -532,7 +532,7 @@ export function ScatterChart({
           dataSet: clusters[bestClusterIndex],
           labelX: labelPositions[bestLabelIndex].labelX,
           labelY: labelPositions[bestLabelIndex].labelY,
-          distance: bestDistance
+          squaredDistance: bestSquaredDistance
         });
         usedPositions.add(bestLabelIndex);
         usedClusters.add(bestClusterIndex);
@@ -589,9 +589,10 @@ export function ScatterChart({
     // 最適な割り当てを計算
     const optimizedAssignments = optimizeClusterLabelAssignment(labelPositions, clustersWithCenters);
 
-    // デバッグ：総距離を出力
-    const totalDistance = optimizedAssignments.reduce((sum, assignment) => sum + assignment.distance, 0);
-    console.log(`最適化後の引き出し線総距離: ${totalDistance.toFixed(2)}`);
+    // デバッグ：総二乗距離と総距離を出力
+    const totalSquaredDistance = optimizedAssignments.reduce((sum, assignment) => sum + assignment.squaredDistance, 0);
+    const totalDistance = Math.sqrt(optimizedAssignments.reduce((sum, assignment) => sum + assignment.squaredDistance, 0));
+    console.log(`最適化後の引き出し線二乗和: ${totalSquaredDistance.toFixed(2)}, 実距離: ${totalDistance.toFixed(2)}`);
 
     return optimizedAssignments;
   }
