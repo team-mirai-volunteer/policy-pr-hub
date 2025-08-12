@@ -11,6 +11,34 @@ import { Box, Divider } from "@chakra-ui/react";
 import type { Metadata } from "next";
 import hierarchicalResult from "@/data/hierarchical_result.json";
 
+interface RawHierarchicalResult {
+  arguments: Array<{
+    arg_id: string;
+    argument: string;
+    x: number;
+    y: number;
+    p: number;
+    cluster_ids: string[];
+    attributes: null;
+    url: null;
+  }>;
+  clusters: Array<{
+    level: number;
+    id: string;
+    label: string;
+    takeaway: string;
+    value: number;
+    parent: string;
+    density_rank_percentile: number;
+  }>;
+  comments: Record<string, { comment: string }>;
+  propertyMap: Record<string, unknown>;
+  translations: Record<string, unknown>;
+  overview: string;
+  config: any;
+  comment_num: number;
+}
+
 // Remove PageProps since we no longer need slug parameter
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,7 +47,16 @@ export async function generateMetadata(): Promise<Metadata> {
     reporter: "Policy PR Hub",
     message: "政策PR Hubで分析されたレポートです"
   };
-  const result: Result = hierarchicalResult as Result;
+  
+  const rawResult = hierarchicalResult as RawHierarchicalResult;
+  const transformedResult = {
+    ...rawResult,
+    arguments: rawResult.arguments.map((arg, i: number) => ({
+      ...arg,
+      comment_id: i
+    }))
+  };
+  const result: Result = transformedResult as unknown as Result;
   
   return {
     title: `${result.config.question} - ${meta.reporter}`,
@@ -33,7 +70,16 @@ export default function Page() {
     reporter: "Policy PR Hub",
     message: "政策PR Hubで分析されたレポートです"
   };
-  const result: Result = hierarchicalResult as Result;
+  
+  const rawResult = hierarchicalResult as RawHierarchicalResult;
+  const transformedResult = {
+    ...rawResult,
+    arguments: rawResult.arguments.map((arg, i: number) => ({
+      ...arg,
+      comment_id: i
+    }))
+  };
+  const result: Result = transformedResult as unknown as Result;
 
   return (
     <>
