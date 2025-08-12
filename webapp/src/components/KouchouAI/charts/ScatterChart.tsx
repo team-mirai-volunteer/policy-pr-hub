@@ -30,6 +30,12 @@ export function ScatterChart({
   // フィルター条件に合致しないものは後で灰色表示する
   const allArguments = argumentList;
 
+  // クラスター別の引数インデックス（パフォーマンス向上）
+  const byCluster: Record<string, Argument[]> = allArguments.reduce((m, a) => {
+    for (const cid of a.cluster_ids) (m[cid] ??= []).push(a);
+    return m;
+  }, {} as Record<string, Argument[]>);
+
   const targetClusters = clusterList.filter((cluster) => cluster.level === targetLevel);
   const softColors = [
     "#7ac943",
@@ -418,48 +424,34 @@ export function ScatterChart({
     return { centerX, centerY };
   }
 
-
   /**
-   * バウンディングボックスの外側にラベル配置エリアを定義
-   * @param bounds データ点のバウンディングボックス
-   * @returns 4つの配置エリア（上下左右）
+   * クラスター内で重心に最も近い点をアンカーとして取得（メドイド近傍）
+   * 外れ値に引っ張られない、より密な中心点を提供
+   * @param clusterId 対象クラスタID
+   * @returns メドイド近傍の座標
    */
-  function defineLabelAreas(bounds: ReturnType<typeof calculateDataBounds>) {
-    const distanceFromData = 0; // データ点からラベルエリアまでの距離
-
-    const areas = [
-      // 上側エリア
-      {
-        x: bounds.minX + (bounds.maxX - bounds.minX) / 2, // 上側の中央に配置
-        y: bounds.maxY + distanceFromData,
-        width: bounds.maxX - bounds.minX,
-        direction: 'top' as const
-      },
-      // 下側エリア  
-      {
-        x: bounds.minX + (bounds.maxX - bounds.minX) / 2, // 下側の中央に配置
-        y: bounds.minY - distanceFromData,
-        width: bounds.maxX - bounds.minX,
-        direction: 'bottom' as const
-      },
-      // 右側エリア
-      {
-        x: bounds.maxX + distanceFromData + 10, // 10ピクセルだけ右に
-        y: bounds.minY + (bounds.maxY - bounds.minY) / 2, // 右側の中央に配置
-        height: bounds.maxY - bounds.minY,
-        direction: 'right' as const
-      },
-      // 左側エリア
-      {
-        x: bounds.minX - distanceFromData - 10, // 10ピクセルだけ左に
-        y: bounds.minY + (bounds.maxY - bounds.minY) / 2, // 左側の中央に配置
-        height: bounds.maxY - bounds.minY,
-        direction: 'left' as const
-      },
-    ];
+  function getClusterAnchor(clusterId: string): { x: number; y: number } {
+    const pts = byCluster[clusterId] ?? [];
+    if (!pts.length) return { x: 0, y: 0 };
     
-    return areas;
+    // 重心を計算
+    const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+    const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+    
+    // 重心に最も近い実際の点を見つける
+    let best = pts[0];
+    let bd = Infinity;
+    for (const p of pts) {
+      const d = (p.x - cx) ** 2 + (p.y - cy) ** 2;
+      if (d < bd) { 
+        bd = d; 
+        best = p; 
+      }
+    }
+    return { x: best.x, y: best.y };
   }
+
+
 
   /**
    * 表示対象のクラスターを取得（密度フィルターされたものは除外）
@@ -472,129 +464,106 @@ export function ScatterChart({
     });
   }
 
-  /**
-   * 引き出し線の長さの二乗を計算（計算効率とペナライズ効果向上）
-   * @param labelX ラベルのX座標
-   * @param labelY ラベルのY座標
-   * @param clusterX クラスターのX座標
-   * @param clusterY クラスターのY座標
-   * @returns 引き出し線の長さの二乗
-   */
-  function calculateLineSquaredLength(labelX: number, labelY: number, clusterX: number, clusterY: number): number {
-    return Math.pow(labelX - clusterX, 2) + Math.pow(labelY - clusterY, 2);
-  }
 
   /**
-   * 繰り返し最小選択法：全ての組み合わせから最短距離を選択（二乗和最小化）
-   * @param labelPositions ラベル位置の配列
-   * @param clusters クラスターの配列
-   * @returns 最適化された割り当て
-   */
-  function optimizeClusterLabelAssignment(
-    labelPositions: Array<{ labelX: number; labelY: number }>,
-    clusters: Array<{ cluster: Cluster; centerX: number; centerY: number }>
-  ) {
-    const assignments = [];
-    const usedClusters = new Set<number>();
-    const usedPositions = new Set<number>();
-
-    // 各ラベル位置に対して最も二乗距離が短いクラスターを割り当て
-    while (usedPositions.size < Math.min(labelPositions.length, clusters.length)) {
-      let bestSquaredDistance = Number.MAX_VALUE;
-      let bestLabelIndex = -1;
-      let bestClusterIndex = -1;
-
-      // 全ての未使用ラベル位置と未使用クラスターの組み合わせを検討
-      for (let labelIdx = 0; labelIdx < labelPositions.length; labelIdx++) {
-        if (usedPositions.has(labelIdx)) continue;
-
-        for (let clusterIdx = 0; clusterIdx < clusters.length; clusterIdx++) {
-          if (usedClusters.has(clusterIdx)) continue;
-
-          const squaredDistance = calculateLineSquaredLength(
-            labelPositions[labelIdx].labelX,
-            labelPositions[labelIdx].labelY,
-            clusters[clusterIdx].centerX,
-            clusters[clusterIdx].centerY
-          );
-
-          if (squaredDistance < bestSquaredDistance) {
-            bestSquaredDistance = squaredDistance;
-            bestLabelIndex = labelIdx;
-            bestClusterIndex = clusterIdx;
-          }
-        }
-      }
-
-      // 最良の組み合わせを割り当て
-      if (bestLabelIndex >= 0 && bestClusterIndex >= 0) {
-        assignments.push({
-          dataSet: clusters[bestClusterIndex],
-          labelX: labelPositions[bestLabelIndex].labelX,
-          labelY: labelPositions[bestLabelIndex].labelY,
-          squaredDistance: bestSquaredDistance
-        });
-        usedPositions.add(bestLabelIndex);
-        usedClusters.add(bestClusterIndex);
-      }
-    }
-
-    return assignments;
-  }
-
-  /**
-   * ラベルの最適な配置位置を計算（引き出し線長さ最小化）
+   * 制約付きラベル配置：左右各10まで、あふれは上下へ退避
+   * 単調対応により交差をゼロにして視認性を向上
    * @returns 各クラスターのラベル位置情報
    */
-  function calculateOptimalLabelPositions() {
-    const validClusters = getValidClustersForLabels();
-    if (validClusters.length === 0) return [];
+  function calcLabelPositionsConstrained() {
+    const valid = getValidClustersForLabels();
+    if (!valid.length) return [];
 
-    const bounds = calculateDataBounds();
-    const labelAreas = defineLabelAreas(bounds);
+    const b = calculateDataBounds();
+    const midX = (b.minX + b.maxX) / 2;
+    const midY = (b.minY + b.maxY) / 2;
+    const dx = (b.maxX - b.minX) * 0.06; // ラベルを外側へ
+    const dy = (b.maxY - b.minY) * 0.06;
 
-    // ラベル位置を事前に計算
-    const dataHeight = bounds.maxY - bounds.minY;
-    const expandedHeight = dataHeight * 1.2;
-    const startY = bounds.minY - expandedHeight * 0.1;
+    const withCenter = valid.map(ds => {
+      const a = getClusterAnchor(ds.cluster.id);
+      return { ...ds, centerX: a.x || ds.centerX, centerY: a.y || ds.centerY };
+    });
 
-    const labelPositions = [];
+    const left  = withCenter.filter(c => c.centerX <= midX).sort((a,b)=>a.centerY-b.centerY);
+    const right = withCenter.filter(c => c.centerX >  midX).sort((a,b)=>a.centerY-b.centerY);
 
-    // 左右のラベル位置を生成
-    const leftArea = labelAreas[3]; // left area
-    const rightArea = labelAreas[2]; // right area
-    const totalLabels = validClusters.length;
-    const leftCount = Math.ceil(totalLabels / 2);
-    const rightCount = totalLabels - leftCount;
-
-    // 左側のラベル位置
-    for (let i = 0; i < leftCount; i++) {
-      const yPosition = startY + (expandedHeight / (leftCount + 1)) * (i + 1);
-      labelPositions.push({ labelX: leftArea.x, labelY: yPosition });
+    const MAX_SIDE = 10;
+    
+    // まず左右に配置（各10まで）
+    const keepLeft  = left.slice(0,  Math.min(MAX_SIDE, left.length));
+    const keepRight = right.slice(0, Math.min(MAX_SIDE, right.length));
+    
+    // 左右に置ききれなかった分を集める
+    const leftOverflow = left.slice(MAX_SIDE);
+    const rightOverflow = right.slice(MAX_SIDE);
+    
+    // 左右あわせて20個まで配置できるので、空きがあれば反対側に回す
+    const totalUsed = keepLeft.length + keepRight.length;
+    const remainingCapacity = 20 - totalUsed;
+    
+    let finalLeft = [...keepLeft];
+    let finalRight = [...keepRight];
+    
+    if (remainingCapacity > 0) {
+      // 左側に空きがある場合、右のあふれを左に回す
+      if (keepLeft.length < MAX_SIDE && rightOverflow.length > 0) {
+        const canMoveToLeft = Math.min(MAX_SIDE - keepLeft.length, rightOverflow.length);
+        finalLeft = [...keepLeft, ...rightOverflow.slice(0, canMoveToLeft)];
+        rightOverflow.splice(0, canMoveToLeft);
+      }
+      
+      // 右側に空きがある場合、左のあふれを右に回す
+      if (keepRight.length < MAX_SIDE && leftOverflow.length > 0) {
+        const canMoveToRight = Math.min(MAX_SIDE - keepRight.length, leftOverflow.length);
+        finalRight = [...keepRight, ...leftOverflow.slice(0, canMoveToRight)];
+        leftOverflow.splice(0, canMoveToRight);
+      }
     }
+    
+    const overflow = [...leftOverflow, ...rightOverflow];
 
-    // 右側のラベル位置
-    for (let i = 0; i < rightCount; i++) {
-      const yPosition = startY + (expandedHeight / (rightCount + 1)) * (i + 1);
-      labelPositions.push({ labelX: rightArea.x, labelY: yPosition });
-    }
+    // スロット生成ヘルパ
+    const makeVerticalSlots = (n: number, x: number) => {
+      // 縦の間隔を20%増やすため、表示範囲を1.2倍に拡張
+      const expandedHeight = (b.maxY - b.minY) * 1.2;
+      const startY = b.minY - expandedHeight * 0.1;
+      return Array.from({length: n}, (_, i) => ({
+        labelX: x,
+        labelY: startY + (expandedHeight / (n + 1)) * (i + 1),
+      }));
+    };
 
-    // クラスター中央点を計算
-    const clustersWithCenters = validClusters.map(dataSet => ({
-      ...dataSet,
-      centerX: calculateClusterBoundingBoxCenter(dataSet.cluster.id)?.centerX ?? dataSet.centerX,
-      centerY: calculateClusterBoundingBoxCenter(dataSet.cluster.id)?.centerY ?? dataSet.centerY
-    }));
+    const makeHorizontalSlots = (n: number, y: number) =>
+      Array.from({length: n}, (_, i) => ({
+        labelX: b.minX + (b.maxX - b.minX) * ((i + 1) / (n + 1)),
+        labelY: y,
+      }));
 
-    // 最適な割り当てを計算
-    const optimizedAssignments = optimizeClusterLabelAssignment(labelPositions, clustersWithCenters);
+    // 左右スロット（単調対応で交差ゼロ）
+    const leftSlots  = makeVerticalSlots(finalLeft.length,  b.minX - dx);
+    const rightSlots = makeVerticalSlots(finalRight.length, b.maxX + dx);
 
-    // デバッグ：総二乗距離と総距離を出力
-    const totalSquaredDistance = optimizedAssignments.reduce((sum, assignment) => sum + assignment.squaredDistance, 0);
-    const totalDistance = Math.sqrt(optimizedAssignments.reduce((sum, assignment) => sum + assignment.squaredDistance, 0));
-    console.log(`最適化後の引き出し線二乗和: ${totalSquaredDistance.toFixed(2)}, 実距離: ${totalDistance.toFixed(2)}`);
+    const assignments: Array<{ dataSet: { cluster: Cluster; centerX: number; centerY: number }; labelX:number; labelY:number; side:'left'|'right'|'top'|'bottom' }> = [];
+    finalLeft.forEach((ds, i)  => assignments.push({ dataSet: ds, ...leftSlots[i],  side: 'left'  }));
+    finalRight.forEach((ds, i) => assignments.push({ dataSet: ds, ...rightSlots[i], side: 'right' }));
 
-    return optimizedAssignments;
+    // あふれは上下へ：midY 基準で分配し、各列で x 昇順にして単調対応
+    const top = overflow.filter(c => c.centerY >= midY).sort((a,b)=>a.centerX-b.centerX);
+    const bottom = overflow.filter(c => c.centerY <  midY).sort((a,b)=>a.centerX-b.centerX);
+
+    const MAX_TOP = 10, MAX_BOTTOM = 10;
+    const topSlots    = makeHorizontalSlots(Math.min(MAX_TOP, top.length),    b.maxY + dy);
+    const bottomSlots = makeHorizontalSlots(Math.min(MAX_BOTTOM, bottom.length), b.minY - dy);
+
+    top.slice(0, MAX_TOP).forEach((ds, i)    => assignments.push({ dataSet: ds, ...topSlots[i],    side: 'top' }));
+    bottom.slice(0, MAX_BOTTOM).forEach((ds, i)=> assignments.push({ dataSet: ds, ...bottomSlots[i], side: 'bottom' }));
+
+    // 40超の超過分は表示しない
+    const hidden = top.slice(MAX_TOP).length + bottom.slice(MAX_BOTTOM).length;
+    if (hidden > 0) console.info(`ラベル上限を超過: 非表示 ${hidden} 件`);
+
+    return assignments;
   }
 
 
@@ -602,9 +571,15 @@ export function ScatterChart({
 
   /**
    * 単一アノテーションオブジェクトを作成（引き出し線でのラベル作り）
-   * 全体画面でのみ有効な機能として実装
+   * 4つのサイド（left/right/top/bottom）に対応し、適切なアンカリングを提供
    */
-  function createSingleAnnotation(dataSet: { cluster: Cluster; centerX: number; centerY: number }, labelX: number, labelY: number, isFullScreen: boolean = false): Partial<Annotations> {
+  function createSingleAnnotation(
+    dataSet: { cluster: Cluster; centerX: number; centerY: number },
+    labelX: number, 
+    labelY: number, 
+    side: 'left' | 'right' | 'top' | 'bottom',
+    isFullScreen: boolean = false
+  ): Partial<Annotations> {
     // フィルター状態の判定
     const isAllFiltered = filteredArgumentIds &&
       (separateDataByFilter(dataSet.cluster).matching.length === 0 || dataSet.cluster.allFiltered);
@@ -614,45 +589,43 @@ export function ScatterChart({
       ? clusterColorMapA[dataSet.cluster.id].replace(/[0-9a-f]{2}$/i, "cc")
       : clusterColorMapA[dataSet.cluster.id];
 
-    // バウンディングボックスの中央点を取得（引き出し線の接続先）
-    const boundingBoxCenter = calculateClusterBoundingBoxCenter(dataSet.cluster.id);
-
-    // フォールバック：バウンディングボックスが計算できない場合は従来の重心を使用
-    const clusterCenterX = boundingBoxCenter?.centerX ?? dataSet.centerX;
-    const clusterCenterY = boundingBoxCenter?.centerY ?? dataSet.centerY;
-
-    // 引き出し線の色（クラスターと同じ色）
+    // メドイド近傍のアンカー点を取得
+    const a = getClusterAnchor(dataSet.cluster.id);
+    const cx = a.x ?? dataSet.centerX;
+    const cy = a.y ?? dataSet.centerY;
+    
     const arrowColor = clusterColorMap[dataSet.cluster.id];
 
-
     return {
-      // 【重要】Plotlyアノテーションの正しい仕組み（実測結果）：
-      // - (x, y): 引き出し線の先端（ポイント先）
+      // 【重要】Plotlyアノテーションの正しい仕組み：
+      // - (x, y): 引き出し線の先端（データポイント）
       // - (ax, ay): テキストが配置される位置＋引き出し線の起点
-      // - 引き出し線は (ax, ay) から (x, y) に向かって描画される
-      // - テキストは (ax, ay) の位置に表示される
       
       // 引き出し線の先端（クラスター中央点を指す）
-      x: clusterCenterX,
-      y: clusterCenterY,
+      x: cx,
+      y: cy,
       xref: "x",
       yref: "y",
 
       // ラベルの内容
       text: wrapLabelText(dataSet.cluster.label),
 
-      // 引き出し線の設定（全体画面でのみ有効）
+      // 引き出し線の設定
       showarrow: isFullScreen,
-      arrowhead: isFullScreen ? 0 : undefined, // 矢印なし（線のみ）
-      arrowsize: isFullScreen ? 1 : undefined,
-      arrowwidth: isFullScreen ? 2 : undefined,
-      arrowcolor: isFullScreen ? arrowColor : undefined,
+      arrowhead: 0,
+      arrowsize: 1,
+      arrowwidth: 1.5,
+      arrowcolor: arrowColor,
 
       // 引き出し線の起点＋テキスト表示位置（ラベル位置）
-      ax: isFullScreen ? labelX : clusterCenterX,
-      ay: isFullScreen ? labelY : clusterCenterY,
-      axref: isFullScreen ? "x" : "x",
-      ayref: isFullScreen ? "y" : "y",
+      ax: labelX,
+      ay: labelY,
+      axref: "x",
+      ayref: "y",
+
+      // サイドに応じたアンカリング（テキストボックスの基準点）
+      xanchor: side === 'left' ? 'right' : side === 'right' ? 'left' : 'center',
+      yanchor: side === 'top'  ? 'bottom' : side === 'bottom' ? 'top' : 'middle',
 
       // ラベルのスタイル
       font: {
@@ -664,13 +637,14 @@ export function ScatterChart({
       borderpad: 8,
       width: annotationLabelWidth,
       align: "left" as const,
+      opacity: 0.97,
     };
   }
 
   // === メインのアノテーション生成 ===
   const annotations: Partial<Annotations>[] = showClusterLabels
-    ? calculateOptimalLabelPositions().map(({ dataSet, labelX, labelY }) =>
-      createSingleAnnotation(dataSet, labelX, labelY, true) // 常に引き出し線を表示
+    ? calcLabelPositionsConstrained().map(({ dataSet, labelX, labelY, side }) =>
+      createSingleAnnotation(dataSet, labelX, labelY, side, true) // 常に引き出し線を表示
     )
     : [];
 
