@@ -473,7 +473,77 @@ export function ScatterChart({
   }
 
   /**
-   * ラベルの最適な配置位置を計算
+   * 引き出し線の長さを計算
+   * @param labelX ラベルのX座標
+   * @param labelY ラベルのY座標
+   * @param clusterX クラスターのX座標
+   * @param clusterY クラスターのY座標
+   * @returns 引き出し線の長さ
+   */
+  function calculateLineLength(labelX: number, labelY: number, clusterX: number, clusterY: number): number {
+    return Math.sqrt(Math.pow(labelX - clusterX, 2) + Math.pow(labelY - clusterY, 2));
+  }
+
+  /**
+   * 貪欲法でラベル位置とクラスターの最適な割り当てを計算
+   * @param labelPositions ラベル位置の配列
+   * @param clusters クラスターの配列
+   * @returns 最適化された割り当て
+   */
+  function optimizeClusterLabelAssignment(
+    labelPositions: Array<{ labelX: number; labelY: number }>,
+    clusters: Array<{ cluster: Cluster; centerX: number; centerY: number }>
+  ) {
+    const assignments = [];
+    const usedClusters = new Set<number>();
+    const usedPositions = new Set<number>();
+
+    // 各ラベル位置に対して最も近いクラスターを割り当て
+    while (usedPositions.size < Math.min(labelPositions.length, clusters.length)) {
+      let bestDistance = Number.MAX_VALUE;
+      let bestLabelIndex = -1;
+      let bestClusterIndex = -1;
+
+      // 全ての未使用ラベル位置と未使用クラスターの組み合わせを検討
+      for (let labelIdx = 0; labelIdx < labelPositions.length; labelIdx++) {
+        if (usedPositions.has(labelIdx)) continue;
+
+        for (let clusterIdx = 0; clusterIdx < clusters.length; clusterIdx++) {
+          if (usedClusters.has(clusterIdx)) continue;
+
+          const distance = calculateLineLength(
+            labelPositions[labelIdx].labelX,
+            labelPositions[labelIdx].labelY,
+            clusters[clusterIdx].centerX,
+            clusters[clusterIdx].centerY
+          );
+
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            bestLabelIndex = labelIdx;
+            bestClusterIndex = clusterIdx;
+          }
+        }
+      }
+
+      // 最良の組み合わせを割り当て
+      if (bestLabelIndex >= 0 && bestClusterIndex >= 0) {
+        assignments.push({
+          dataSet: clusters[bestClusterIndex],
+          labelX: labelPositions[bestLabelIndex].labelX,
+          labelY: labelPositions[bestLabelIndex].labelY,
+          distance: bestDistance
+        });
+        usedPositions.add(bestLabelIndex);
+        usedClusters.add(bestClusterIndex);
+      }
+    }
+
+    return assignments;
+  }
+
+  /**
+   * ラベルの最適な配置位置を計算（引き出し線長さ最小化）
    * @returns 各クラスターのラベル位置情報
    */
   function calculateOptimalLabelPositions() {
@@ -482,77 +552,50 @@ export function ScatterChart({
 
     const bounds = calculateDataBounds();
     const labelAreas = defineLabelAreas(bounds);
-    const labelHeight = annotationFontsize + 16;
+
+    // ラベル位置を事前に計算
+    const dataHeight = bounds.maxY - bounds.minY;
+    const expandedHeight = dataHeight * 1.2;
+    const startY = bounds.minY - expandedHeight * 0.1;
 
     const labelPositions = [];
 
-    // 左右に均等配置：バウンディングボックスの高さをラベル数で割る
-    const dataHeight = bounds.maxY - bounds.minY;
-    const leftLabels = [];
-    const rightLabels = [];
-    
-    // 左右に分ける
-    for (let i = 0; i < validClusters.length; i++) {
-      const dataSet = validClusters[i];
-      const sideIndex = i % 2; // 左右交互（0=右側、1=左側）
-      
-      if (sideIndex === 0) {
-        rightLabels.push(dataSet);
-      } else {
-        leftLabels.push(dataSet);
-      }
-    }
-    
-    // 右側の均等配置（少し広がりを持たせる）
-    rightLabels.forEach((dataSet, index) => {
-      const rightArea = labelAreas[2]; // right area
-      const expandedHeight = dataHeight * 1.2; // 20%拡張
-      const startY = bounds.minY - expandedHeight * 0.1; // 開始位置を少し上に
-      const yPosition = startY + (expandedHeight / (rightLabels.length + 1)) * (index + 1);
-      labelPositions.push({ 
-        dataSet, 
-        labelX: rightArea.x, 
-        labelY: yPosition 
-      });
-    });
-    
-    // 左側の均等配置（少し広がりを持たせる）
-    leftLabels.forEach((dataSet, index) => {
-      const leftArea = labelAreas[3]; // left area
-      const expandedHeight = dataHeight * 1.2; // 20%拡張
-      const startY = bounds.minY - expandedHeight * 0.1; // 開始位置を少し上に
-      const yPosition = startY + (expandedHeight / (leftLabels.length + 1)) * (index + 1);
-      labelPositions.push({ 
-        dataSet, 
-        labelX: leftArea.x, 
-        labelY: yPosition 
-      });
-    });
+    // 左右のラベル位置を生成
+    const leftArea = labelAreas[3]; // left area
+    const rightArea = labelAreas[2]; // right area
+    const totalLabels = validClusters.length;
+    const leftCount = Math.ceil(totalLabels / 2);
+    const rightCount = totalLabels - leftCount;
 
-    return labelPositions;
+    // 左側のラベル位置
+    for (let i = 0; i < leftCount; i++) {
+      const yPosition = startY + (expandedHeight / (leftCount + 1)) * (i + 1);
+      labelPositions.push({ labelX: leftArea.x, labelY: yPosition });
+    }
+
+    // 右側のラベル位置
+    for (let i = 0; i < rightCount; i++) {
+      const yPosition = startY + (expandedHeight / (rightCount + 1)) * (i + 1);
+      labelPositions.push({ labelX: rightArea.x, labelY: yPosition });
+    }
+
+    // クラスター中央点を計算
+    const clustersWithCenters = validClusters.map(dataSet => ({
+      ...dataSet,
+      centerX: calculateClusterBoundingBoxCenter(dataSet.cluster.id)?.centerX ?? dataSet.centerX,
+      centerY: calculateClusterBoundingBoxCenter(dataSet.cluster.id)?.centerY ?? dataSet.centerY
+    }));
+
+    // 最適な割り当てを計算
+    const optimizedAssignments = optimizeClusterLabelAssignment(labelPositions, clustersWithCenters);
+
+    // デバッグ：総距離を出力
+    const totalDistance = optimizedAssignments.reduce((sum, assignment) => sum + assignment.distance, 0);
+    console.log(`最適化後の引き出し線総距離: ${totalDistance.toFixed(2)}`);
+
+    return optimizedAssignments;
   }
 
-  /**
-   * 単一ラベルの配置位置を計算
-   */
-  function calculateSingleLabelPosition(
-    area: ReturnType<typeof defineLabelAreas>[0],
-    positionIndex: number,
-    margin: number,
-    labelHeight: number
-  ) {
-    if (area.direction === 'top' || area.direction === 'bottom') {
-      // 水平方向に配置
-      const labelX = area.x + positionIndex * (annotationLabelWidth + margin);
-      const labelY = area.y;
-      return { labelX, labelY };
-    } else {
-      // 垂直方向に配置
-      const labelX = area.x;
-      const labelY = area.y + positionIndex * (labelHeight + margin);
-      return { labelX, labelY };
-    }
-  }
 
 
 
