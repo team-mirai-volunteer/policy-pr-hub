@@ -13,6 +13,7 @@ type Props = {
   // フィルター適用後の引数IDのリストを受け取り、フィルターに該当しないポイントの表示を変更する
   filteredArgumentIds?: string[];
   config?: Config; // ソースリンク機能の有効/無効を制御するため
+  isFullScreen?: boolean; // 全体画面表示かどうかの制御フラグ
 };
 
 export function ScatterChart({
@@ -23,10 +24,17 @@ export function ScatterChart({
   showClusterLabels,
   filteredArgumentIds, // フィルター済みIDリスト（フィルター条件に合致する引数のID）
   config,
+  isFullScreen = false, // デフォルトは非全画面
 }: Props) {
   // 全ての引数を表示するため、argumentListをそのまま使用
   // フィルター条件に合致しないものは後で灰色表示する
   const allArguments = argumentList;
+
+  // クラスター別の引数インデックス（パフォーマンス向上）
+  const byCluster: Record<string, Argument[]> = allArguments.reduce((m, a) => {
+    for (const cid of a.cluster_ids) (m[cid] ??= []).push(a);
+    return m;
+  }, {} as Record<string, Argument[]>);
 
   const targetClusters = clusterList.filter((cluster) => cluster.level === targetLevel);
   const softColors = [
@@ -194,6 +202,9 @@ export function ScatterChart({
     const centerX = allXValues.length > 0 ? allXValues.reduce((sum, val) => sum + val, 0) / allXValues.length : 0;
     const centerY = allYValues.length > 0 ? allYValues.reduce((sum, val) => sum + val, 0) / allYValues.length : 0;
 
+    // 密度フィルターで除外されたクラスターかどうかをチェック
+    const isDensityFiltered = cluster.densityFiltered;
+
     // フィルター適用後の表示用データを分離
     const { matching, notMatching } = separateDataByFilter(cluster);
 
@@ -201,67 +212,72 @@ export function ScatterChart({
     const allElementsFiltered = filteredArgumentIds && (matching.length === 0 || cluster.allFiltered);
 
     const notMatchingData =
-      notMatching.length > 0 || allElementsFiltered
+      notMatching.length > 0 || allElementsFiltered || isDensityFiltered // 密度フィルターされた場合も表示
         ? {
-            x: notMatching.length > 0 ? notMatching.map((arg) => arg.x) : allClusterArguments.map((arg) => arg.x),
-            y: notMatching.length > 0 ? notMatching.map((arg) => arg.y) : allClusterArguments.map((arg) => arg.y),
-            mode: "markers",
-            marker: {
-              size: 7,
-              color: Array(notMatching.length > 0 ? notMatching.length : allClusterArguments.length).fill("#cccccc"), // グレー表示
-              opacity: Array(notMatching.length > 0 ? notMatching.length : allClusterArguments.length).fill(0.5), // 半透明
-            },
-            text: Array(notMatching.length > 0 ? notMatching.length : allClusterArguments.length).fill(""), // ホバーテキストなし
-            type: "scatter",
-            hoverinfo: "skip", // ホバー表示を無効化
-            showlegend: false,
-            // argumentのメタデータを埋め込み
-            customdata:
-              notMatching.length > 0
-                ? notMatching.map((arg) => ({ arg_id: arg.arg_id, url: arg.url }))
-                : allClusterArguments.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })),
-          }
+          x: isDensityFiltered
+            ? allClusterArguments.map((arg) => arg.x) // 密度フィルターされた場合は全ての引数を表示
+            : notMatching.length > 0 ? notMatching.map((arg) => arg.x) : allClusterArguments.map((arg) => arg.x),
+          y: isDensityFiltered
+            ? allClusterArguments.map((arg) => arg.y) // 密度フィルターされた場合は全ての引数を表示
+            : notMatching.length > 0 ? notMatching.map((arg) => arg.y) : allClusterArguments.map((arg) => arg.y),
+          mode: "markers",
+          marker: {
+            size: isDensityFiltered ? 2 : 7, // 密度フィルターされたクラスターはもっと小さく
+            color: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill("#999999"), // 濃い灰色で不透明に
+            opacity: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill(isDensityFiltered ? 1 : 0.5), // 密度フィルターされたクラスターは不透明
+          },
+          text: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill(""), // ホバーテキストなし
+          type: "scatter",
+          hoverinfo: "skip", // ホバー表示を無効化
+          showlegend: false,
+          // argumentのメタデータを埋め込み
+          customdata: isDensityFiltered
+            ? allClusterArguments.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })) // 密度フィルターされた場合は全ての引数
+            : notMatching.length > 0
+              ? notMatching.map((arg) => ({ arg_id: arg.arg_id, url: arg.url }))
+              : allClusterArguments.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })),
+        }
         : null;
 
     // フィルター対象のアイテム（前面に描画）
     const matchingData =
-      matching.length > 0
+      matching.length > 0 && !isDensityFiltered // 密度フィルターされたクラスターはmatchingDataを表示しない
         ? {
-            x: matching.map((arg) => arg.x),
-            y: matching.map((arg) => arg.y),
-            mode: "markers",
-            marker: {
-              size: 10, // 統一サイズでシンプルに
-              color: Array(matching.length).fill(clusterColorMap[cluster.id]),
-              opacity: Array(matching.length).fill(1), // 不透明
-              line: config?.enable_source_link
-                ? {
-                    width: 2,
-                    color: "#ffffff",
-                  }
-                : undefined,
+          x: matching.map((arg) => arg.x),
+          y: matching.map((arg) => arg.y),
+          mode: "markers",
+          marker: {
+            size: 10, // 統一サイズでシンプルに
+            color: Array(matching.length).fill(clusterColorMap[cluster.id]),
+            opacity: Array(matching.length).fill(1), // 不透明
+            line: config?.enable_source_link
+              ? {
+                width: 2,
+                color: "#ffffff",
+              }
+              : undefined,
+          },
+          text: matching.map((arg) => {
+            const argumentText = arg.argument.replace(/(.{30})/g, "$1<br />");
+            const urlText = config?.enable_source_link && arg.url ? `<br><b>🔗 クリックしてソースを見る</b>` : "";
+            return `<b>${cluster.label}</b><br>${argumentText}${urlText}`;
+          }),
+          type: "scatter",
+          hoverinfo: "text",
+          hovertemplate: "%{text}<extra></extra>",
+          hoverlabel: {
+            align: "left" as const,
+            bgcolor: "white",
+            bordercolor: clusterColorMap[cluster.id],
+            font: {
+              size: 12,
+              color: "#333",
             },
-            text: matching.map((arg) => {
-              const argumentText = arg.argument.replace(/(.{30})/g, "$1<br />");
-              const urlText = config?.enable_source_link && arg.url ? `<br><b>🔗 クリックしてソースを見る</b>` : "";
-              return `<b>${cluster.label}</b><br>${argumentText}${urlText}`;
-            }),
-            type: "scatter",
-            hoverinfo: "text",
-            hovertemplate: "%{text}<extra></extra>",
-            hoverlabel: {
-              align: "left" as const,
-              bgcolor: "white",
-              bordercolor: clusterColorMap[cluster.id],
-              font: {
-                size: 12,
-                color: "#333",
-              },
-            },
-            showlegend: false,
-            // argumentのメタデータを埋め込み
-            customdata: matching.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })),
-          }
+          },
+          showlegend: false,
+          // argumentのメタデータを埋め込み
+          customdata: matching.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })),
+        }
         : null;
 
     return {
@@ -273,38 +289,46 @@ export function ScatterChart({
     };
   });
 
-  // 描画用のデータセットを作成
-  const plotData = clusterDataSets.flatMap((dataSet) => {
-    const result = [];
+  // 描画用のデータセットを作成（密度フィルターされた点を背景に）
+  const densityFilteredData: any[] = [];
+  const normalData: any[] = [];
+
+  clusterDataSets.forEach((dataSet) => {
+    const isDensityFiltered = dataSet.cluster.densityFiltered;
+
+    const dataToAdd = [];
 
     // フィルター対象外のデータ（背面に描画）
     if (dataSet.notMatchingData) {
-      result.push(dataSet.notMatchingData);
+      dataToAdd.push(dataSet.notMatchingData);
     }
 
     // フィルター対象のデータ（前面に描画）
     if (dataSet.matchingData) {
-      result.push(dataSet.matchingData);
+      dataToAdd.push(dataSet.matchingData);
     }
 
     // フィルターがない場合の通常表示
     if (!filteredArgumentIds) {
       const clusterArguments = allArguments.filter((arg) => arg.cluster_ids.includes(dataSet.cluster.id));
       if (clusterArguments.length > 0) {
-        result.push({
+        dataToAdd.push({
           x: clusterArguments.map((arg) => arg.x),
           y: clusterArguments.map((arg) => arg.y),
           mode: "markers",
           marker: {
-            size: 7,
-            color: clusterColorMap[dataSet.cluster.id],
+            size: isDensityFiltered ? 2 : 7, // 密度フィルターされたクラスターは小さく
+            color: isDensityFiltered ? "#999999" : clusterColorMap[dataSet.cluster.id], // 密度フィルターされたクラスターは濃い灰色で不透明
+            opacity: isDensityFiltered ? 1 : 1, // 密度フィルターされたクラスターも不透明
           },
-          text: clusterArguments.map(
-            (arg) => `<b>${dataSet.cluster.label}</b><br>${arg.argument.replace(/(.{30})/g, "$1<br />")}`,
-          ),
+          text: isDensityFiltered ?
+            Array(clusterArguments.length).fill("") : // 密度フィルターされたクラスターはホバーテキストなし
+            clusterArguments.map(
+              (arg) => `<b>${dataSet.cluster.label}</b><br>${arg.argument.replace(/(.{30})/g, "$1<br />")}`,
+            ),
           type: "scattergl",
-          hoverinfo: "text",
-          hoverlabel: {
+          hoverinfo: isDensityFiltered ? "skip" : "text", // 密度フィルターされたクラスターはホバーなし
+          hoverlabel: isDensityFiltered ? undefined : {
             align: "left" as const,
             bgcolor: "white",
             bordercolor: clusterColorMap[dataSet.cluster.id],
@@ -320,36 +344,304 @@ export function ScatterChart({
       }
     }
 
-    return result;
+    // 密度フィルターされたデータとそうでないデータを分離
+    if (isDensityFiltered) {
+      densityFilteredData.push(...dataToAdd);
+    } else {
+      normalData.push(...dataToAdd);
+    }
   });
 
-  // アノテーションの設定
-  const annotations: Partial<Annotations>[] = showClusterLabels
-    ? clusterDataSets.map((dataSet) => {
-        // フィルターされていても背景色を維持（灰色のクラスターでもラベルは元の色で表示）
-        const isAllFiltered =
-          filteredArgumentIds &&
-          (separateDataByFilter(dataSet.cluster).matching.length === 0 || dataSet.cluster.allFiltered);
-        const bgColor = isAllFiltered
-          ? clusterColorMapA[dataSet.cluster.id].replace(/[0-9a-f]{2}$/i, "cc") // クラスター全体がフィルターされた場合も薄くする
-          : clusterColorMapA[dataSet.cluster.id];
+  // 密度フィルターされたデータを最初に（背景に）、通常のデータを後に（前景に）描画
+  const plotData = [...densityFilteredData, ...normalData];
 
-        return {
-          x: dataSet.centerX,
-          y: dataSet.centerY,
-          text: wrapLabelText(dataSet.cluster.label), // ラベルを折り返し処理
-          showarrow: false,
-          font: {
-            color: "white",
-            size: annotationFontsize,
-            weight: 700,
-          },
-          bgcolor: bgColor,
-          borderpad: 10,
-          width: annotationLabelWidth,
-          align: "left" as const,
-        };
-      })
+  // === ラベル配置のためのヘルパー関数群 ===
+
+  /** 
+   * 全データ点のバウンディングボックスを計算
+   * @returns データ点を囲む矩形の座標
+   */
+  function calculateDataBounds() {
+    if (allArguments.length === 0) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+
+    let minX = allArguments[0].x;
+    let maxX = allArguments[0].x;
+    let minY = allArguments[0].y;
+    let maxY = allArguments[0].y;
+
+    allArguments.forEach(arg => {
+      minX = Math.min(minX, arg.x);
+      maxX = Math.max(maxX, arg.x);
+      minY = Math.min(minY, arg.y);
+      maxY = Math.max(maxY, arg.y);
+    });
+
+    // バウンディングボックスにマージンを追加してデータ点から離す
+    const margin = 0;
+    return {
+      minX: minX - margin,
+      maxX: maxX + margin,
+      minY: minY - margin,
+      maxY: maxY + margin,
+    };
+  }
+
+  /**
+   * 対象クラスタのデータ点ごとにバウンディングボックスを計算し、その中央点を返す
+   * @param targetClusterId 対象クラスタID
+   * @returns バウンディングボックスの中央点座標
+   */
+  function calculateClusterBoundingBoxCenter(targetClusterId: string): { centerX: number; centerY: number } | null {
+    // 対象クラスタに属するデータ点を取得
+    const clusterArguments = allArguments.filter(arg => arg.cluster_ids.includes(targetClusterId));
+
+    if (clusterArguments.length === 0) {
+      console.warn(`クラスタ ${targetClusterId} にデータ点が見つかりません`);
+      return null;
+    }
+
+    // バウンディングボックスを計算
+    let minX = clusterArguments[0].x;
+    let maxX = clusterArguments[0].x;
+    let minY = clusterArguments[0].y;
+    let maxY = clusterArguments[0].y;
+
+    clusterArguments.forEach(arg => {
+      minX = Math.min(minX, arg.x);
+      maxX = Math.max(maxX, arg.x);
+      minY = Math.min(minY, arg.y);
+      maxY = Math.max(maxY, arg.y);
+    });
+
+    // バウンディングボックスの中央点を計算
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+
+    return { centerX, centerY };
+  }
+
+  /**
+   * クラスター内で重心に最も近い点をアンカーとして取得（メドイド近傍）
+   * 外れ値に引っ張られない、より密な中心点を提供
+   * @param clusterId 対象クラスタID
+   * @returns メドイド近傍の座標
+   */
+  function getClusterAnchor(clusterId: string): { x: number; y: number } {
+    const pts = byCluster[clusterId] ?? [];
+    if (!pts.length) return { x: 0, y: 0 };
+    
+    // 重心を計算
+    const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+    const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+    
+    // 重心に最も近い実際の点を見つける
+    let best = pts[0];
+    let bd = Infinity;
+    for (const p of pts) {
+      const d = (p.x - cx) ** 2 + (p.y - cy) ** 2;
+      if (d < bd) { 
+        bd = d; 
+        best = p; 
+      }
+    }
+    return { x: best.x, y: best.y };
+  }
+
+
+
+  /**
+   * 表示対象のクラスターを取得（密度フィルターされたものは除外）
+   * @returns 表示すべきクラスターのリスト
+   */
+  function getValidClustersForLabels() {
+    return clusterDataSets.filter(dataSet => {
+      return !dataSet.cluster.densityFiltered;
+    });
+  }
+
+
+  /**
+   * 制約付きラベル配置：左右各10まで、あふれは上下へ退避
+   * 単調対応により交差をゼロにして視認性を向上
+   * @returns 各クラスターのラベル位置情報
+   */
+  function calcLabelPositionsConstrained() {
+    const valid = getValidClustersForLabels();
+    if (!valid.length) return [];
+
+    const b = calculateDataBounds();
+    const midX = (b.minX + b.maxX) / 2;
+    const midY = (b.minY + b.maxY) / 2;
+    const dx = (b.maxX - b.minX) * 0.06; // ラベルを外側へ
+    const dy = (b.maxY - b.minY) * 0.06;
+
+    const withCenter = valid.map(ds => {
+      const a = getClusterAnchor(ds.cluster.id);
+      return { ...ds, centerX: a.x || ds.centerX, centerY: a.y || ds.centerY };
+    });
+
+    const left  = withCenter.filter(c => c.centerX <= midX).sort((a,b)=>a.centerY-b.centerY);
+    const right = withCenter.filter(c => c.centerX >  midX).sort((a,b)=>a.centerY-b.centerY);
+
+    const MAX_SIDE = 10;
+    
+    // まず左右に配置（各10まで）
+    const keepLeft  = left.slice(0,  Math.min(MAX_SIDE, left.length));
+    const keepRight = right.slice(0, Math.min(MAX_SIDE, right.length));
+    
+    // 左右に置ききれなかった分を集める
+    const leftOverflow = left.slice(MAX_SIDE);
+    const rightOverflow = right.slice(MAX_SIDE);
+    
+    // 左右あわせて20個まで配置できるので、空きがあれば反対側に回す
+    const totalUsed = keepLeft.length + keepRight.length;
+    const remainingCapacity = 20 - totalUsed;
+    
+    let finalLeft = [...keepLeft];
+    let finalRight = [...keepRight];
+    
+    if (remainingCapacity > 0) {
+      // 左側に空きがある場合、右のあふれを左に回す
+      if (keepLeft.length < MAX_SIDE && rightOverflow.length > 0) {
+        const canMoveToLeft = Math.min(MAX_SIDE - keepLeft.length, rightOverflow.length);
+        finalLeft = [...keepLeft, ...rightOverflow.slice(0, canMoveToLeft)];
+        rightOverflow.splice(0, canMoveToLeft);
+      }
+      
+      // 右側に空きがある場合、左のあふれを右に回す
+      if (keepRight.length < MAX_SIDE && leftOverflow.length > 0) {
+        const canMoveToRight = Math.min(MAX_SIDE - keepRight.length, leftOverflow.length);
+        finalRight = [...keepRight, ...leftOverflow.slice(0, canMoveToRight)];
+        leftOverflow.splice(0, canMoveToRight);
+      }
+    }
+    
+    const overflow = [...leftOverflow, ...rightOverflow];
+
+    // スロット生成ヘルパ
+    const makeVerticalSlots = (n: number, x: number) => {
+      // 縦の間隔を20%増やすため、表示範囲を1.2倍に拡張
+      const expandedHeight = (b.maxY - b.minY) * 1.2;
+      const startY = b.minY - expandedHeight * 0.1;
+      return Array.from({length: n}, (_, i) => ({
+        labelX: x,
+        labelY: startY + (expandedHeight / (n + 1)) * (i + 1),
+      }));
+    };
+
+    const makeHorizontalSlots = (n: number, y: number) =>
+      Array.from({length: n}, (_, i) => ({
+        labelX: b.minX + (b.maxX - b.minX) * ((i + 1) / (n + 1)),
+        labelY: y,
+      }));
+
+    // 左右スロット（単調対応で交差ゼロ）
+    const leftSlots  = makeVerticalSlots(finalLeft.length,  b.minX - dx);
+    const rightSlots = makeVerticalSlots(finalRight.length, b.maxX + dx);
+
+    const assignments: Array<{ dataSet: { cluster: Cluster; centerX: number; centerY: number }; labelX:number; labelY:number; side:'left'|'right'|'top'|'bottom' }> = [];
+    finalLeft.forEach((ds, i)  => assignments.push({ dataSet: ds, ...leftSlots[i],  side: 'left'  }));
+    finalRight.forEach((ds, i) => assignments.push({ dataSet: ds, ...rightSlots[i], side: 'right' }));
+
+    // あふれは上下へ：midY 基準で分配し、各列で x 昇順にして単調対応
+    const top = overflow.filter(c => c.centerY >= midY).sort((a,b)=>a.centerX-b.centerX);
+    const bottom = overflow.filter(c => c.centerY <  midY).sort((a,b)=>a.centerX-b.centerX);
+
+    const MAX_TOP = 10, MAX_BOTTOM = 10;
+    const topSlots    = makeHorizontalSlots(Math.min(MAX_TOP, top.length),    b.maxY + dy);
+    const bottomSlots = makeHorizontalSlots(Math.min(MAX_BOTTOM, bottom.length), b.minY - dy);
+
+    top.slice(0, MAX_TOP).forEach((ds, i)    => assignments.push({ dataSet: ds, ...topSlots[i],    side: 'top' }));
+    bottom.slice(0, MAX_BOTTOM).forEach((ds, i)=> assignments.push({ dataSet: ds, ...bottomSlots[i], side: 'bottom' }));
+
+    // 40超の超過分は表示しない
+    const hidden = top.slice(MAX_TOP).length + bottom.slice(MAX_BOTTOM).length;
+    if (hidden > 0) console.info(`ラベル上限を超過: 非表示 ${hidden} 件`);
+
+    return assignments;
+  }
+
+
+
+
+  /**
+   * 単一アノテーションオブジェクトを作成（引き出し線でのラベル作り）
+   * 4つのサイド（left/right/top/bottom）に対応し、適切なアンカリングを提供
+   */
+  function createSingleAnnotation(
+    dataSet: { cluster: Cluster; centerX: number; centerY: number },
+    labelX: number, 
+    labelY: number, 
+    side: 'left' | 'right' | 'top' | 'bottom',
+    isFullScreen: boolean = false
+  ): Partial<Annotations> {
+    // フィルター状態の判定
+    const isAllFiltered = filteredArgumentIds &&
+      (separateDataByFilter(dataSet.cluster).matching.length === 0 || dataSet.cluster.allFiltered);
+
+    // 背景色の決定
+    const bgColor = isAllFiltered
+      ? clusterColorMapA[dataSet.cluster.id].replace(/[0-9a-f]{2}$/i, "cc")
+      : clusterColorMapA[dataSet.cluster.id];
+
+    // メドイド近傍のアンカー点を取得
+    const a = getClusterAnchor(dataSet.cluster.id);
+    const cx = a.x ?? dataSet.centerX;
+    const cy = a.y ?? dataSet.centerY;
+    
+    const arrowColor = clusterColorMap[dataSet.cluster.id];
+
+    return {
+      // 【重要】Plotlyアノテーションの正しい仕組み：
+      // - (x, y): 引き出し線の先端（データポイント）
+      // - (ax, ay): テキストが配置される位置＋引き出し線の起点
+      
+      // 引き出し線の先端（クラスター中央点を指す）
+      x: cx,
+      y: cy,
+      xref: "x",
+      yref: "y",
+
+      // ラベルの内容
+      text: wrapLabelText(dataSet.cluster.label),
+
+      // 引き出し線の設定
+      showarrow: isFullScreen,
+      arrowhead: 0,
+      arrowsize: 1,
+      arrowwidth: 1.5,
+      arrowcolor: arrowColor,
+
+      // 引き出し線の起点＋テキスト表示位置（ラベル位置）
+      ax: labelX,
+      ay: labelY,
+      axref: "x",
+      ayref: "y",
+
+      // サイドに応じたアンカリング（テキストボックスの基準点）
+      xanchor: side === 'left' ? 'right' : side === 'right' ? 'left' : 'center',
+      yanchor: side === 'top'  ? 'bottom' : side === 'bottom' ? 'top' : 'middle',
+
+      // ラベルのスタイル
+      font: {
+        color: "white",
+        size: annotationFontsize,
+        weight: 700,
+      },
+      bgcolor: bgColor,
+      borderpad: 8,
+      width: annotationLabelWidth,
+      align: "left" as const,
+      opacity: 0.97,
+    };
+  }
+
+  // === メインのアノテーション生成 ===
+  const annotations: Partial<Annotations>[] = showClusterLabels
+    ? calcLabelPositionsConstrained().map(({ dataSet, labelX, labelY, side }) =>
+      createSingleAnnotation(dataSet, labelX, labelY, side, true) // 常に引き出し線を表示
+    )
     : [];
 
   return (
@@ -369,6 +661,8 @@ export function ScatterChart({
                 zeroline: false,
                 showticklabels: false,
                 showgrid: false,
+                scaleanchor: "x", // x軸に対してy軸のスケールを固定してアスペクト比を保つ
+                scaleratio: 1, // 1:1の比率を維持
               },
               hovermode: "closest",
               dragmode: "pan", // ドラッグによる移動（パン）を有効化
@@ -386,7 +680,7 @@ export function ScatterChart({
           }}
           onHover={onHover}
           onUpdate={onUpdate}
-          onClick={(event) => {
+          onClick={(event: any) => {
             if (!config?.enable_source_link) return;
 
             try {

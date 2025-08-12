@@ -61,6 +61,7 @@ export type Cluster = {
   density_rank_percentile: number; // 密度ランクのパーセンタイル
   allFiltered?: boolean; // フィルターの結果、すべての要素が除外された場合にtrue
   filtered?: boolean; // フィルター対象外の場合にtrue（TreemapChartで使用）
+  densityFiltered?: boolean; // 密度フィルターで除外された場合にtrue
 };
 
 export type JaLocaleType = {
