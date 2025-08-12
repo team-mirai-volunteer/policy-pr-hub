@@ -194,6 +194,10 @@ export function ScatterChart({
     const centerX = allXValues.length > 0 ? allXValues.reduce((sum, val) => sum + val, 0) / allXValues.length : 0;
     const centerY = allYValues.length > 0 ? allYValues.reduce((sum, val) => sum + val, 0) / allYValues.length : 0;
 
+    // 密度フィルターで除外されたクラスターかどうかをチェック
+    // @ts-expect-error densityFilteredプロパティが存在する前提で処理（TypeScript型定義に追加済み）
+    const isDensityFiltered = cluster.densityFiltered;
+
     // フィルター適用後の表示用データを分離
     const { matching, notMatching } = separateDataByFilter(cluster);
 
@@ -202,23 +206,28 @@ export function ScatterChart({
     const allElementsFiltered = filteredArgumentIds && (matching.length === 0 || cluster.allFiltered);
 
     const notMatchingData =
-      notMatching.length > 0 || allElementsFiltered
+      notMatching.length > 0 || allElementsFiltered || isDensityFiltered // 密度フィルターされた場合も表示
         ? {
-            x: notMatching.length > 0 ? notMatching.map((arg) => arg.x) : allClusterArguments.map((arg) => arg.x),
-            y: notMatching.length > 0 ? notMatching.map((arg) => arg.y) : allClusterArguments.map((arg) => arg.y),
+            x: isDensityFiltered 
+              ? allClusterArguments.map((arg) => arg.x) // 密度フィルターされた場合は全ての引数を表示
+              : notMatching.length > 0 ? notMatching.map((arg) => arg.x) : allClusterArguments.map((arg) => arg.x),
+            y: isDensityFiltered
+              ? allClusterArguments.map((arg) => arg.y) // 密度フィルターされた場合は全ての引数を表示
+              : notMatching.length > 0 ? notMatching.map((arg) => arg.y) : allClusterArguments.map((arg) => arg.y),
             mode: "markers",
             marker: {
-              size: 7,
-              color: Array(notMatching.length > 0 ? notMatching.length : allClusterArguments.length).fill("#cccccc"), // グレー表示
-              opacity: Array(notMatching.length > 0 ? notMatching.length : allClusterArguments.length).fill(0.5), // 半透明
+              size: isDensityFiltered ? 2 : 7, // 密度フィルターされたクラスターはもっと小さく
+              color: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill("#999999"), // 濃い灰色で不透明に
+              opacity: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill(isDensityFiltered ? 1 : 0.5), // 密度フィルターされたクラスターは不透明
             },
-            text: Array(notMatching.length > 0 ? notMatching.length : allClusterArguments.length).fill(""), // ホバーテキストなし
+            text: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill(""), // ホバーテキストなし
             type: "scatter",
             hoverinfo: "skip", // ホバー表示を無効化
             showlegend: false,
             // argumentのメタデータを埋め込み
-            customdata:
-              notMatching.length > 0
+            customdata: isDensityFiltered 
+              ? allClusterArguments.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })) // 密度フィルターされた場合は全ての引数
+              : notMatching.length > 0
                 ? notMatching.map((arg) => ({ arg_id: arg.arg_id, url: arg.url }))
                 : allClusterArguments.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })),
           }
@@ -226,7 +235,7 @@ export function ScatterChart({
 
     // フィルター対象のアイテム（前面に描画）
     const matchingData =
-      matching.length > 0
+      matching.length > 0 && !isDensityFiltered // 密度フィルターされたクラスターはmatchingDataを表示しない
         ? {
             x: matching.map((arg) => arg.x),
             y: matching.map((arg) => arg.y),
@@ -274,38 +283,47 @@ export function ScatterChart({
     };
   });
 
-  // 描画用のデータセットを作成
-  const plotData = clusterDataSets.flatMap((dataSet) => {
-    const result = [];
+  // 描画用のデータセットを作成（密度フィルターされた点を背景に）
+  const densityFilteredData = [];
+  const normalData = [];
+  
+  clusterDataSets.forEach((dataSet) => {
+    // @ts-expect-error densityFilteredプロパティが存在する前提で処理（TypeScript型定義に追加済み）
+    const isDensityFiltered = dataSet.cluster.densityFiltered;
+    
+    const dataToAdd = [];
 
     // フィルター対象外のデータ（背面に描画）
     if (dataSet.notMatchingData) {
-      result.push(dataSet.notMatchingData);
+      dataToAdd.push(dataSet.notMatchingData);
     }
 
     // フィルター対象のデータ（前面に描画）
     if (dataSet.matchingData) {
-      result.push(dataSet.matchingData);
+      dataToAdd.push(dataSet.matchingData);
     }
 
     // フィルターがない場合の通常表示
     if (!filteredArgumentIds) {
       const clusterArguments = allArguments.filter((arg) => arg.cluster_ids.includes(dataSet.cluster.id));
       if (clusterArguments.length > 0) {
-        result.push({
+        dataToAdd.push({
           x: clusterArguments.map((arg) => arg.x),
           y: clusterArguments.map((arg) => arg.y),
           mode: "markers",
           marker: {
-            size: 7,
-            color: clusterColorMap[dataSet.cluster.id],
+            size: isDensityFiltered ? 2 : 7, // 密度フィルターされたクラスターは小さく
+            color: isDensityFiltered ? "#999999" : clusterColorMap[dataSet.cluster.id], // 密度フィルターされたクラスターは濃い灰色で不透明
+            opacity: isDensityFiltered ? 1 : 1, // 密度フィルターされたクラスターも不透明
           },
-          text: clusterArguments.map(
-            (arg) => `<b>${dataSet.cluster.label}</b><br>${arg.argument.replace(/(.{30})/g, "$1<br />")}`,
-          ),
+          text: isDensityFiltered ? 
+            Array(clusterArguments.length).fill("") : // 密度フィルターされたクラスターはホバーテキストなし
+            clusterArguments.map(
+              (arg) => `<b>${dataSet.cluster.label}</b><br>${arg.argument.replace(/(.{30})/g, "$1<br />")}`,
+            ),
           type: "scattergl",
-          hoverinfo: "text",
-          hoverlabel: {
+          hoverinfo: isDensityFiltered ? "skip" : "text", // 密度フィルターされたクラスターはホバーなし
+          hoverlabel: isDensityFiltered ? undefined : {
             align: "left" as const,
             bgcolor: "white",
             bordercolor: clusterColorMap[dataSet.cluster.id],
@@ -321,8 +339,16 @@ export function ScatterChart({
       }
     }
 
-    return result;
+    // 密度フィルターされたデータとそうでないデータを分離
+    if (isDensityFiltered) {
+      densityFilteredData.push(...dataToAdd);
+    } else {
+      normalData.push(...dataToAdd);
+    }
   });
+  
+  // 密度フィルターされたデータを最初に（背景に）、通常のデータを後に（前景に）描画
+  const plotData = [...densityFilteredData, ...normalData];
 
   // アノテーションの設定
   const annotations: Partial<Annotations>[] = showClusterLabels

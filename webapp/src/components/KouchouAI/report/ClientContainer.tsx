@@ -179,16 +179,20 @@ export function ClientContainer({ result }: Props) {
         clusterIdsWithFilteredArgs.add(clusterId);
       }
     }
-    const { filtered: densityFilteredClusters } = getDenseClusters(result.clusters || [], maxDensity, minValue);
+    const { filtered: densityFilteredClusters, filteredOut: densityFilteredOutClusters } = getDenseClusters(result.clusters || [], maxDensity, minValue);
+
+    // 密度フィルターで除外されたクラスターも含める（灰色表示用）
+    const allClustersIncludingFiltered = [...densityFilteredClusters, ...densityFilteredOutClusters];
 
     // フィルターが適用されていても、すべてのクラスターを表示するが、
     // フィルター条件に合致する引数がないクラスタは特別なプロパティで区別する
-    const combinedFilteredClusters = densityFilteredClusters.map((cluster) => {
+    const combinedFilteredClusters = allClustersIncludingFiltered.map((cluster) => {
+      const isDensityFiltered = densityFilteredOutClusters.some(c => c.id === cluster.id);
       if (hasActiveFilters && !clusterIdsWithFilteredArgs.has(cluster.id)) {
         // このクラスターにはフィルター条件に合致する引数が存在しないことを示す
-        return { ...cluster, allFiltered: true };
+        return { ...cluster, allFiltered: true, densityFiltered: isDensityFiltered };
       }
-      return cluster;
+      return { ...cluster, densityFiltered: isDensityFiltered };
     });
 
     setFilteredResult({
@@ -346,14 +350,17 @@ function getDenseClusters(
   clusters: Cluster[],
   maxDensity: number,
   minValue: number,
-): { filtered: Cluster[]; isEmpty: boolean } {
+): { filtered: Cluster[]; filteredOut: Cluster[]; isEmpty: boolean } {
   const deepestLevel = clusters.reduce((maxLevel, cluster) => Math.max(maxLevel, cluster.level), 0);
   const deepestLevelClusters = clusters.filter((c) => c.level === deepestLevel);
   const filteredDeepestLevelClusters = deepestLevelClusters
     .filter((c) => c.density_rank_percentile <= maxDensity)
     .filter((c) => c.value >= minValue);
+  const filteredOutDeepestLevelClusters = deepestLevelClusters
+    .filter((c) => c.density_rank_percentile > maxDensity || c.value < minValue);
   return {
     filtered: [...clusters.filter((c) => c.level !== deepestLevel), ...filteredDeepestLevelClusters],
+    filteredOut: filteredOutDeepestLevelClusters,
     isEmpty: filteredDeepestLevelClusters.length === 0,
   };
 }
