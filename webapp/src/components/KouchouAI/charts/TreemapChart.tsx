@@ -65,7 +65,7 @@ export function TreemapChart({ clusterList, argumentList, onHover, level, onTree
       return isFilteringActive ? clusterCounts[node.id] : node.value;
     }
     // 引数ノードの場合、フィルター状態に基づいて値を決定
-    // @ts-ignore filtered プロパティを追加したので無視
+    // @ts-expect-error filtered プロパティを追加したので無視
     return node.filtered ? 0 : 1; // フィルター対象外なら0、そうでなければ1
   });
   const customdata = list.map((node) => {
@@ -81,7 +81,7 @@ export function TreemapChart({ clusterList, argumentList, onHover, level, onTree
       }
     }
 
-    // @ts-ignore filtered プロパティを追加したので無視
+    // @ts-expect-error filtered プロパティを追加したので無視
     return node.filtered
       ? "" // フィルター対象外はホバー表示しない
       : takeaway;
@@ -89,7 +89,7 @@ export function TreemapChart({ clusterList, argumentList, onHover, level, onTree
 
   // フィルター状態によって色を変更
   const colors = list.map((node) => {
-    // @ts-ignore filtered プロパティを追加したので無視
+    // @ts-expect-error filtered プロパティを追加したので無視
     return node.filtered ? "#cccccc" : ""; // フィルターに該当しないものはグレー、それ以外はデフォルト色
   });
 
@@ -112,7 +112,7 @@ export function TreemapChart({ clusterList, argumentList, onHover, level, onTree
         color: "white",
       },
       opacity: list.map((node) => {
-        // @ts-ignore filtered プロパティを追加したので無視
+        // @ts-expect-error filtered プロパティを追加したので無視
         return node.filtered ? 0.5 : 1; // フィルターに該当しないものは半透明に
       }),
     },
@@ -161,7 +161,7 @@ export function TreemapChart({ clusterList, argumentList, onHover, level, onTree
       onUpdate={darkenPathbar}
       onUnhover={darkenPathbar}
       onHover={() => {
-        onHover ? onHover() : null;
+        onHover?.();
         darkenPathbar();
       }}
       onClick={(event) => {

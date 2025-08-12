@@ -9,3 +9,5 @@ export type LinkProps = ChakraLinkProps;
 export const Link = forwardRef<HTMLAnchorElement, LinkProps>((props, ref) => {
   return <ChakraLink ref={ref} {...props} />;
 });
+
+Link.displayName = "Link";
