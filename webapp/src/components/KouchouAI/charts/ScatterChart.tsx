@@ -203,7 +203,6 @@ export function ScatterChart({
     const centerY = allYValues.length > 0 ? allYValues.reduce((sum, val) => sum + val, 0) / allYValues.length : 0;
 
     // 密度フィルターで除外されたクラスターかどうかをチェック
-    // @ts-expect-error densityFilteredプロパティが存在する前提で処理（TypeScript型定義に追加済み）
     const isDensityFiltered = cluster.densityFiltered;
 
     // フィルター適用後の表示用データを分離
@@ -291,11 +290,10 @@ export function ScatterChart({
   });
 
   // 描画用のデータセットを作成（密度フィルターされた点を背景に）
-  const densityFilteredData = [];
-  const normalData = [];
+  const densityFilteredData: any[] = [];
+  const normalData: any[] = [];
 
   clusterDataSets.forEach((dataSet) => {
-    // @ts-expect-error densityFilteredプロパティが存在する前提で処理（TypeScript型定義に追加済み）
     const isDensityFiltered = dataSet.cluster.densityFiltered;
 
     const dataToAdd = [];
@@ -458,7 +456,6 @@ export function ScatterChart({
    */
   function getValidClustersForLabels() {
     return clusterDataSets.filter(dataSet => {
-      // @ts-expect-error densityFilteredプロパティが存在する前提で処理
       return !dataSet.cluster.densityFiltered;
     });
   }
@@ -683,7 +680,7 @@ export function ScatterChart({
           }}
           onHover={onHover}
           onUpdate={onUpdate}
-          onClick={(event) => {
+          onClick={(event: any) => {
             if (!config?.enable_source_link) return;
 
             try {
