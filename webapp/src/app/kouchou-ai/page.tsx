@@ -51,9 +51,6 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   try {
     const slug = (await params).slug;
-    const metaResponse = await fetch(`${getApiBaseUrl()}/meta/metadata.json`, {
-      next: { tags: ["meta"] } as any,
-    });
     const resultResponse = await fetch(`${getApiBaseUrl()}/reports/${slug}`, {
       headers: {
         "x-api-key": process.env.NEXT_PUBLIC_PUBLIC_API_KEY || "",
@@ -61,13 +58,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       },
       next: { tags: [`report-${slug}`] } as any,
     });
-    if (!metaResponse.ok || !resultResponse.ok) {
+    if (!resultResponse.ok) {
       return {};
     }
 
     const { getBasePath } = await import("@/app/utils/image-src");
 
-    const meta: Meta = await metaResponse.json();
+    const meta: Meta = {
+      isDefault: true,
+      reporter: "Policy PR Hub",
+      message: "政策PR Hubで分析されたレポートです"
+    };
     const result: Result = await resultResponse.json();
     const metaData: Metadata = {
       title: `${result.config.question} - ${meta.reporter}`,
@@ -103,9 +104,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function Page({ params }: PageProps) {
   const slug = (await params).slug;
-  const metaResponse = await fetch(`${getApiBaseUrl()}/meta/metadata.json`, {
-    next: { tags: ["meta"] } as any,
-  });
   const resultResponse = await fetch(`${getApiBaseUrl()}/reports/${slug}`, {
     headers: {
       "x-api-key": process.env.NEXT_PUBLIC_PUBLIC_API_KEY || "",
@@ -114,11 +112,15 @@ export default async function Page({ params }: PageProps) {
     next: { tags: [`report-${slug}`] } as any,
   });
 
-  if (metaResponse.status === 404 || resultResponse.status === 404) {
+  if (resultResponse.status === 404) {
     notFound();
   }
 
-  const meta: Meta = await metaResponse.json();
+  const meta: Meta = {
+    isDefault: true,
+    reporter: "Policy PR Hub",
+    message: "政策PR Hubで分析されたレポートです"
+  };
   const result: Result = await resultResponse.json();
 
   return (
