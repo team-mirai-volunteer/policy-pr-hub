@@ -350,34 +350,237 @@ export function ScatterChart({
   // 密度フィルターされたデータを最初に（背景に）、通常のデータを後に（前景に）描画
   const plotData = [...densityFilteredData, ...normalData];
 
-  // アノテーションの設定
-  const annotations: Partial<Annotations>[] = showClusterLabels
-    ? clusterDataSets.map((dataSet) => {
-        // フィルターされていても背景色を維持（灰色のクラスターでもラベルは元の色で表示）
-        // @ts-expect-error allFilteredプロパティが存在する前提で処理（TypeScript型定義に追加済み）
-        const isAllFiltered =
-          filteredArgumentIds &&
-          (separateDataByFilter(dataSet.cluster).matching.length === 0 || dataSet.cluster.allFiltered);
-        const bgColor = isAllFiltered
-          ? clusterColorMapA[dataSet.cluster.id].replace(/[0-9a-f]{2}$/i, "cc") // クラスター全体がフィルターされた場合も薄くする
-          : clusterColorMapA[dataSet.cluster.id];
+  // === ラベル配置のためのヘルパー関数群 ===
+  
+  /** 
+   * 全データ点のバウンディングボックスを計算
+   * @returns データ点を囲む矩形の座標
+   */
+  function calculateDataBounds() {
+    if (allArguments.length === 0) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+    
+    let minX = allArguments[0].x;
+    let maxX = allArguments[0].x;
+    let minY = allArguments[0].y;
+    let maxY = allArguments[0].y;
+    
+    allArguments.forEach(arg => {
+      minX = Math.min(minX, arg.x);
+      maxX = Math.max(maxX, arg.x);
+      minY = Math.min(minY, arg.y);
+      maxY = Math.max(maxY, arg.y);
+    });
+    
+    // バウンディングボックスにマージンを追加してデータ点から離す
+    const margin = 20;
+    return {
+      minX: minX - margin,
+      maxX: maxX + margin,
+      minY: minY - margin,
+      maxY: maxY + margin,
+    };
+  }
 
-        return {
-          x: dataSet.centerX,
-          y: dataSet.centerY,
-          text: wrapLabelText(dataSet.cluster.label), // ラベルを折り返し処理
-          showarrow: false,
-          font: {
-            color: "white",
-            size: annotationFontsize,
-            weight: 700,
-          },
-          bgcolor: bgColor,
-          borderpad: 10,
-          width: annotationLabelWidth,
-          align: "left" as const,
-        };
-      })
+  /**
+   * バウンディングボックスの外側にラベル配置エリアを定義
+   * @param bounds データ点のバウンディングボックス
+   * @returns 4つの配置エリア（上下左右）
+   */
+  function defineLabelAreas(bounds: ReturnType<typeof calculateDataBounds>) {
+    const distanceFromData = 30; // データ点からラベルエリアまでの距離
+    const labelHeight = annotationFontsize + 16; // ラベルの高さ（フォント + パディング）
+    
+    return [
+      // 上側エリア
+      { 
+        x: bounds.minX, 
+        y: bounds.maxY + distanceFromData, 
+        width: bounds.maxX - bounds.minX, 
+        direction: 'top' as const 
+      },
+      // 下側エリア  
+      { 
+        x: bounds.minX, 
+        y: bounds.minY - distanceFromData - labelHeight, 
+        width: bounds.maxX - bounds.minX, 
+        direction: 'bottom' as const 
+      },
+      // 右側エリア
+      { 
+        x: bounds.maxX + distanceFromData, 
+        y: bounds.minY, 
+        height: bounds.maxY - bounds.minY, 
+        direction: 'right' as const 
+      },
+      // 左側エリア
+      { 
+        x: bounds.minX - distanceFromData - annotationLabelWidth, 
+        y: bounds.minY, 
+        height: bounds.maxY - bounds.minY, 
+        direction: 'left' as const 
+      },
+    ];
+  }
+
+  /**
+   * 表示対象のクラスターを取得（密度フィルターされたものは除外）
+   * @returns 表示すべきクラスターのリスト
+   */
+  function getValidClustersForLabels() {
+    return clusterDataSets.filter(dataSet => {
+      // @ts-expect-error densityFilteredプロパティが存在する前提で処理
+      return !dataSet.cluster.densityFiltered;
+    });
+  }
+
+  /**
+   * ラベルの最適な配置位置を計算
+   * @returns 各クラスターのラベル位置情報
+   */
+  function calculateOptimalLabelPositions() {
+    const validClusters = getValidClustersForLabels();
+    if (validClusters.length === 0) return [];
+    
+    const bounds = calculateDataBounds();
+    const labelAreas = defineLabelAreas(bounds);
+    const labelMargin = 10; // ラベル同士の間隔
+    const labelHeight = annotationFontsize + 16;
+    
+    const labelPositions = [];
+    let currentAreaIndex = 0;
+    let currentPositionInArea = 0;
+    
+    for (const dataSet of validClusters) {
+      const area = labelAreas[currentAreaIndex % labelAreas.length];
+      const { labelX, labelY } = calculateSingleLabelPosition(
+        area, 
+        currentPositionInArea, 
+        labelMargin, 
+        labelHeight
+      );
+      
+      labelPositions.push({ dataSet, labelX, labelY });
+      
+      // エリア内での次の位置へ、エリアが埋まったら次のエリアへ
+      const shouldMoveToNextArea = checkIfAreaIsFull(area, currentPositionInArea, labelMargin, labelHeight);
+      if (shouldMoveToNextArea) {
+        currentAreaIndex++;
+        currentPositionInArea = 0;
+      } else {
+        currentPositionInArea++;
+      }
+    }
+    
+    return labelPositions;
+  }
+
+  /**
+   * 単一ラベルの配置位置を計算
+   */
+  function calculateSingleLabelPosition(
+    area: ReturnType<typeof defineLabelAreas>[0], 
+    positionIndex: number, 
+    margin: number, 
+    labelHeight: number
+  ) {
+    if (area.direction === 'top' || area.direction === 'bottom') {
+      // 水平方向に配置
+      const availableWidth = Math.max(area.width - annotationLabelWidth, annotationLabelWidth);
+      const labelX = area.x + (positionIndex * (annotationLabelWidth + margin)) % availableWidth;
+      const labelY = area.y;
+      return { labelX, labelY };
+    } else {
+      // 垂直方向に配置
+      const labelX = area.x;
+      const availableHeight = Math.max(area.height! - labelHeight, labelHeight);
+      const labelY = area.y + (positionIndex * (labelHeight + margin)) % availableHeight;
+      return { labelX, labelY };
+    }
+  }
+
+  /**
+   * エリアが満杯かどうかをチェック
+   */
+  function checkIfAreaIsFull(
+    area: ReturnType<typeof defineLabelAreas>[0], 
+    positionIndex: number, 
+    margin: number, 
+    labelHeight: number
+  ): boolean {
+    if (area.direction === 'top' || area.direction === 'bottom') {
+      const availableWidth = area.width - annotationLabelWidth;
+      return positionIndex * (annotationLabelWidth + margin) >= availableWidth;
+    } else {
+      const availableHeight = area.height! - labelHeight;
+      return positionIndex * (labelHeight + margin) >= availableHeight;
+    }
+  }
+
+  /**
+   * 単一アノテーションオブジェクトを作成
+   * デバッグしやすいように引き出し線の設定を分離
+   */
+  function createSingleAnnotation(dataSet: any, labelX: number, labelY: number): Partial<Annotations> {
+    // フィルター状態の判定
+    // @ts-expect-error allFilteredプロパティが存在する前提で処理
+    const isAllFiltered = filteredArgumentIds && 
+      (separateDataByFilter(dataSet.cluster).matching.length === 0 || dataSet.cluster.allFiltered);
+    
+    // 背景色の決定
+    const bgColor = isAllFiltered
+      ? clusterColorMapA[dataSet.cluster.id].replace(/[0-9a-f]{2}$/i, "cc")
+      : clusterColorMapA[dataSet.cluster.id];
+    
+    // クラスター中心座標（引き出し線の接続先）
+    const clusterCenterX = dataSet.centerX;
+    const clusterCenterY = dataSet.centerY;
+    
+    // 引き出し線の色（クラスターと同じ色）
+    const arrowColor = clusterColorMap[dataSet.cluster.id];
+    
+    console.log(`ラベル配置: "${dataSet.cluster.label}" - ラベル位置(${labelX}, ${labelY}) -> クラスター中心(${clusterCenterX}, ${clusterCenterY})`);
+    
+    return {
+      // ラベルの位置
+      x: labelX,
+      y: labelY,
+      xref: "x",
+      yref: "y",
+      
+      // ラベルの内容
+      text: wrapLabelText(dataSet.cluster.label),
+      
+      // 引き出し線の設定
+      showarrow: true,
+      arrowhead: 0, // 矢印なし（線のみ）
+      arrowsize: 1,
+      arrowwidth: 2,
+      arrowcolor: arrowColor,
+      
+      // 引き出し線の接続先（クラスター中心）
+      ax: clusterCenterX, 
+      ay: clusterCenterY,
+      axref: "x",
+      ayref: "y",
+      
+      // ラベルのスタイル
+      font: {
+        color: "white",
+        size: annotationFontsize,
+        weight: 700,
+      },
+      bgcolor: bgColor,
+      borderpad: 8,
+      width: annotationLabelWidth,
+      align: "left" as const,
+    };
+  }
+
+  // === メインのアノテーション生成 ===
+  const annotations: Partial<Annotations>[] = showClusterLabels
+    ? calculateOptimalLabelPositions().map(({ dataSet, labelX, labelY }) => 
+        createSingleAnnotation(dataSet, labelX, labelY)
+      )
     : [];
 
   return (

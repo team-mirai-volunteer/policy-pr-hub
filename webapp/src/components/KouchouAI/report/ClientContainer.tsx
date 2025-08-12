@@ -23,7 +23,7 @@ export function ClientContainer({ result }: Props) {
   const [minValue, setMinValue] = useState(5);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDenseGroupEnabled, setIsDenseGroupEnabled] = useState(true);
-  const [showClusterLabels, setShowClusterLabels] = useState(false);
+  const [showClusterLabels, setShowClusterLabels] = useState(true);
   const [treemapLevel, setTreemapLevel] = useState("0");
   const [mounted, setMounted] = useState(false);
 

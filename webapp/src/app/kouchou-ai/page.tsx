@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { Footer } from "@/components/KouchouAI/Footer";
 import { Header } from "@/components/KouchouAI/Header";
@@ -8,24 +10,8 @@ import { Overview } from "@/components/KouchouAI/report/Overview";
 import { Reporter } from "@/components/KouchouAI/reporter/Reporter";
 import type { Meta, Result } from "@/type";
 import { Box, Divider } from "@chakra-ui/react";
-import type { Metadata } from "next";
+import { useEffect } from "react";
 import hierarchicalResult from "@/data/hierarchical_result.json";
-
-// Remove PageProps since we no longer need slug parameter
-
-export async function generateMetadata(): Promise<Metadata> {
-  const meta: Meta = {
-    isDefault: true,
-    reporter: "Policy PR Hub",
-    message: "政策PR Hubで分析されたレポートです"
-  };
-  const result: Result = hierarchicalResult as Result;
-  
-  return {
-    title: `${result.config.question} - ${meta.reporter}`,
-    description: `${result.overview}`,
-  };
-}
 
 export default function Page() {
   const meta: Meta = {
@@ -34,6 +20,22 @@ export default function Page() {
     message: "政策PR Hubで分析されたレポートです"
   };
   const result: Result = hierarchicalResult as Result;
+
+  // Client Componentでメタデータを設定
+  useEffect(() => {
+    document.title = `${result.config.question} - ${meta.reporter}`;
+    
+    // descriptionメタタグを設定
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', result.overview);
+    } else {
+      const newMeta = document.createElement('meta');
+      newMeta.name = 'description';
+      newMeta.content = result.overview;
+      document.head.appendChild(newMeta);
+    }
+  }, [result.config.question, result.overview, meta.reporter]);
 
   return (
     <>
