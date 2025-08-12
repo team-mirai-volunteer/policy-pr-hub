@@ -1,136 +1,139 @@
-import Link from "next/link";
-import { Overview } from "../../components/Overview";
-import { Reporter } from "../../components/Reporter";
-import type { Meta, Result } from "../../types/kouchou";
+import { Footer } from "@/components/KouchouAI/Footer";
+import { Header } from "@/components/KouchouAI/Header";
+import { Analysis } from "@/components/report/Analysis";
+import { BackButton } from "@/components/report/BackButton";
+import { ClientContainer } from "@/components/report/ClientContainer";
+import { Overview } from "@/components/report/Overview";
+import { Reporter } from "@/components/reporter/Reporter";
+import type { Meta, Report, Result } from "@/type";
+import { ReportVisibility } from "@/type";
+import { Box, Separator } from "@chakra-ui/react";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { getApiBaseUrl } from "../utils/api";
 
-const mockMeta: Meta = {
-  isDefault: false,
-  reporter: "デモレポーター",
-  message: "これは広聴AIの実験的なUIデモページです。\n実際のデータではなく、サンプルデータを表示しています。",
-  webLink: "https://dd2030.org/kouchou-ai",
-  brandColor: "#2577b1",
+type PageProps = {
+  params: Promise<{
+    slug: string;
+  }>;
 };
 
-const mockResult: Result = {
-  arguments: Array.from({ length: 1234 }, (_, i) => ({
-    arg_id: `arg_${i}`,
-    argument: `サンプル意見 ${i + 1}`,
-    comment_id: i,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    p: Math.random(),
-    cluster_ids: [`cluster_${Math.floor(i / 10)}`],
-  })),
-  clusters: [],
-  comments: {},
-  propertyMap: {},
-  translations: {},
-  overview: "これは広聴AIの実験的なUIページです。実際のレポートデータの代わりに、サンプルデータを表示しています。将来的には、実際の分析結果やインタラクティブな可視化機能を追加予定です。",
-  config: {
-    name: "デモ設定",
-    question: "広聴AIの実験的UIはどのように改善できるでしょうか？",
-    input: "sample_input",
-    model: "gpt-4",
-    intro: "これは実験的なUIのデモンストレーションです。",
-    output_dir: "demo_output",
-    is_embedded_at_local: false,
-    extraction: {
-      workers: 4,
-      limit: 1000,
-      properties: ["content"],
-      categories: {},
-      category_batch_size: 100,
-      source_code: "",
-      prompt: "",
-      model: "gpt-4",
-    },
-    hierarchical_clustering: {
-      cluster_nums: [10, 5],
-      source_code: "",
-    },
-    embedding: {
-      model: "text-embedding-ada-002",
-      source_code: "",
-    },
-    hierarchical_initial_labelling: {
-      workers: 2,
-      source_code: "",
-      prompt: "",
-      model: "gpt-4",
-    },
-    hierarchical_merge_labelling: {
-      workers: 2,
-      source_code: "",
-      prompt: "",
-      model: "gpt-4",
-    },
-    hierarchical_overview: {
-      source_code: "",
-      prompt: "",
-      model: "gpt-4",
-    },
-    hierarchical_aggregation: {
-      hidden_properties: {},
-      source_code: "",
-    },
-    hierarchical_visualization: {
-      replacements: {},
-      source_code: "",
-    },
-    plan: [
-      {
-        step: "extraction",
-        run: true,
-        reason: "意見抽出のため",
-      },
-      {
-        step: "clustering",
-        run: true,
-        reason: "意見グループ化のため",
-      },
-    ],
-    status: "ready",
-  },
-  comment_num: 2500,
-};
+// ISR 5分おきにレポート更新確認
+export const revalidate = 300;
 
-export default function KouchouAIPage() {
+export async function generateStaticParams() {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/reports`, {
+      headers: {
+        "x-api-key": process.env.NEXT_PUBLIC_PUBLIC_API_KEY || "",
+        "Content-Type": "application/json",
+      },
+    });
+    const reports: Report[] = await response.json();
+    const slugs = reports
+      .filter((report) => report.status === "ready")
+      .map((report) => ({
+        slug: report.slug,
+      }));
+
+    if (process.env.BUILD_SLUGS) {
+      const buildSlugs = process.env.BUILD_SLUGS.split(",").filter(Boolean);
+      return slugs.filter((report) => buildSlugs.includes(report.slug));
+    }
+
+    return slugs;
+  } catch (_e) {
+    return [];
+  }
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  try {
+    const slug = (await params).slug;
+    const metaResponse = await fetch(`${getApiBaseUrl()}/meta/metadata.json`, {
+      next: { tags: ["meta"] },
+    });
+    const resultResponse = await fetch(`${getApiBaseUrl()}/reports/${slug}`, {
+      headers: {
+        "x-api-key": process.env.NEXT_PUBLIC_PUBLIC_API_KEY || "",
+        "Content-Type": "application/json",
+      },
+      next: { tags: [`report-${slug}`] },
+    });
+    if (!metaResponse.ok || !resultResponse.ok) {
+      return {};
+    }
+
+    const { getBasePath } = await import("@/app/utils/image-src");
+
+    const meta: Meta = await metaResponse.json();
+    const result: Result = await resultResponse.json();
+    const metaData: Metadata = {
+      title: `${result.config.question} - ${meta.reporter}`,
+      description: `${result.overview}`,
+    };
+
+    // visibilityが"unlisted"の場合、noindexを設定
+    if (result.visibility === ReportVisibility.UNLISTED) {
+      metaData.robots = {
+        index: false,
+        follow: false,
+      };
+    }
+
+    // 静的エクスポート時はmetadataBaseを設定しない（相対パスを使用するため）
+    if (process.env.NEXT_PUBLIC_OUTPUT_MODE !== "export") {
+      // 開発環境やSSR時のみmetadataBaseを設定
+      const defaultHost = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+      metaData.metadataBase = new URL(defaultHost + getBasePath());
+    }
+
+    if (process.env.NEXT_PUBLIC_OUTPUT_MODE === "export") {
+      metaData.openGraph = {
+        images: [`${slug}/opengraph-image.png`],
+      };
+    }
+
+    return metaData;
+  } catch (_e) {
+    return {};
+  }
+}
+
+export default async function Page({ params }: PageProps) {
+  const slug = (await params).slug;
+  const metaResponse = await fetch(`${getApiBaseUrl()}/meta/metadata.json`, {
+    next: { tags: ["meta"] },
+  });
+  const resultResponse = await fetch(`${getApiBaseUrl()}/reports/${slug}`, {
+    headers: {
+      "x-api-key": process.env.NEXT_PUBLIC_PUBLIC_API_KEY || "",
+      "Content-Type": "application/json",
+    },
+    next: { tags: [`report-${slug}`] },
+  });
+
+  if (metaResponse.status === 404 || resultResponse.status === 404) {
+    notFound();
+  }
+
+  const meta: Meta = await metaResponse.json();
+  const result: Result = await resultResponse.json();
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              広聴AI - 実験的UI
-            </h1>
-            <p className="text-gray-600">
-              kouchou-aiのクライアントビューを移植した実験的なユーザーインターフェースです。
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <Overview result={mockResult} />
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <div className="border-t border-gray-200 my-12"></div>
-            <div className="max-w-3xl mx-auto mb-6">
-              <Reporter meta={mockMeta} />
-            </div>
-          </div>
-
-          <div className="text-center text-sm text-gray-500">
-            <p>
-              このページは実験的な機能です。実際のデータ分析機能は今後追加予定です。
-            </p>
-            <p className="mt-2">
-              <Link href="/" className="text-blue-600 hover:underline">
-                ← ホームページに戻る
-              </Link>
-            </p>
-          </div>
-        </div>
+    <>
+      <div className={"container"}>
+        <Header />
+        <Overview result={result} />
+        <ClientContainer result={result} />
+        <Analysis result={result} />
+        <BackButton />
+        <Separator my={12} maxW={"750px"} mx={"auto"} />
+        <Box maxW={"750px"} mx={"auto"} mb={24}>
+          <Reporter meta={meta} />
+        </Box>
       </div>
-    </div>
+      <Footer meta={meta} />
+    </>
   );
 }
