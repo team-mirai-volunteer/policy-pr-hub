@@ -11,10 +11,12 @@ import {
 import * as React from "react";
 import { CloseButton } from "./close-button";
 
-interface DrawerContentProps extends React.ComponentProps<typeof ChakraDrawerContent> {
+interface DrawerContentProps {
+  children?: React.ReactNode;
   portalled?: boolean;
   portalRef?: React.RefObject<HTMLElement>;
   offset?: string | number;
+  [key: string]: any;
 }
 
 export const DrawerContent = React.forwardRef<HTMLDivElement, DrawerContentProps>(function DrawerContent(props, ref) {

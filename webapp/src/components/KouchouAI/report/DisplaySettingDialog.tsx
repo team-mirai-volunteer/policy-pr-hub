@@ -46,7 +46,7 @@ export function DisplaySettingDialog({
                 <Text fontSize="sm">意見グループ名を表示</Text>
                 <Spacer />
                 <Switch
-                  checked={showClusterLabels}
+                  isChecked={showClusterLabels}
                   onChange={() => onToggleClusterLabels?.(!showClusterLabels)}
                   size="sm"
                 />
@@ -71,7 +71,7 @@ export function DisplaySettingDialog({
               min={0.1}
               max={1}
               value={[maxDensity]}
-              onValueChange={(e) => setMaxDensity(Number(e.value[0]))}
+              onValueChange={(e: { value: number[] }) => setMaxDensity(Number(e.value[0]))}
               marks={[
                 { value: 0.1, label: "10%" },
                 { value: 1, label: "100%" },
@@ -85,7 +85,7 @@ export function DisplaySettingDialog({
               min={0}
               max={10}
               value={[minValue]}
-              onValueChange={(e) => setMinValue(Number(e.value[0]))}
+              onValueChange={(e: { value: number[] }) => setMinValue(Number(e.value[0]))}
               marks={[
                 { value: 0, label: "0" },
                 { value: 10, label: "10" },
