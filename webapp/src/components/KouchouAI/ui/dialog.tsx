@@ -11,10 +11,12 @@ import {
 import * as React from "react";
 import { CloseButton } from "./close-button";
 
-interface DialogContentProps extends React.ComponentProps<typeof ModalContent> {
+interface DialogContentProps {
+  children?: React.ReactNode;
   portalled?: boolean;
   portalRef?: React.RefObject<HTMLElement>;
   backdrop?: boolean;
+  [key: string]: any;
 }
 
 export const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(function DialogContent(props, ref) {
@@ -40,13 +42,32 @@ export const DialogCloseTrigger = React.forwardRef<HTMLButtonElement, any>(
   },
 );
 
-// Chakra UI v2 Modal components mapped to Dialog API
-export const DialogRoot = Modal;
+export const DialogRoot = ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => {
+  const isOpen = props.open !== undefined ? props.open : true;
+  const onClose = props.onOpenChange || props.onClose || (() => {});
+  
+  const { open, onOpenChange, initialFocusEl, lazyMount, ...modalProps } = props;
+  
+  if (initialFocusEl) {
+    modalProps.initialFocusRef = initialFocusEl;
+  }
+  
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} {...modalProps}>
+      {children}
+    </Modal>
+  );
+};
+
 export const DialogFooter = ModalFooter;
 export const DialogHeader = ModalHeader;
 export const DialogBody = ModalBody;
 export const DialogBackdrop = ModalOverlay;
-export const DialogTitle = ModalHeader; // In v2, ModalHeader serves as title
-export const DialogDescription = ModalBody; // In v2, ModalBody serves as description
-export const DialogTrigger = ({ children }: { children: React.ReactNode }) => <>{children}</>;
-export const DialogActionTrigger = ({ children }: { children: React.ReactNode }) => <>{children}</>;
+export const DialogTitle = ModalHeader;
+export const DialogDescription = ModalBody;
+
+export const DialogTrigger = ({ children, asChild, ...props }: { children: React.ReactNode; asChild?: boolean; [key: string]: any }) => 
+  asChild ? <>{children}</> : <button {...props}>{children}</button>;
+
+export const DialogActionTrigger = ({ children, asChild, ...props }: { children: React.ReactNode; asChild?: boolean; [key: string]: any }) => 
+  asChild ? <>{children}</> : <button {...props}>{children}</button>;

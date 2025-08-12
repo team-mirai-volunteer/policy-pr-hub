@@ -12,14 +12,74 @@ import type { Meta, Result } from "@/type";
 import { Box, Divider } from "@chakra-ui/react";
 import { useEffect } from "react";
 import hierarchicalResult from "@/data/hierarchical_result.json";
+import type { Metadata } from "next";
 
+interface RawHierarchicalResult {
+  arguments: Array<{
+    arg_id: string;
+    argument: string;
+    x: number;
+    y: number;
+    p: number;
+    cluster_ids: string[];
+    attributes: null;
+    url: null;
+  }>;
+  clusters: Array<{
+    level: number;
+    id: string;
+    label: string;
+    takeaway: string;
+    value: number;
+    parent: string;
+    density_rank_percentile: number;
+  }>;
+  comments: Record<string, { comment: string }>;
+  propertyMap: Record<string, unknown>;
+  translations: Record<string, unknown>;
+  overview: string;
+  config: any;
+  comment_num: number;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const meta: Meta = {
+    isDefault: true,
+    reporter: "Policy PR Hub",
+    message: "政策PR Hubで分析されたレポートです"
+  };
+  
+  const rawResult = hierarchicalResult as RawHierarchicalResult;
+  const transformedResult = {
+    ...rawResult,
+    arguments: rawResult.arguments.map((arg, i: number) => ({
+      ...arg,
+      comment_id: i
+    }))
+  };
+  const result: Result = transformedResult as unknown as Result;
+  
+  return {
+    title: `${result.config.question} - ${meta.reporter}`,
+    description: `${result.overview}`,
+  };
+}
 export default function Page() {
   const meta: Meta = {
     isDefault: true,
     reporter: "Policy PR Hub",
     message: "政策PR Hubで分析されたレポートです"
   };
-  const result: Result = hierarchicalResult as Result;
+  
+  const rawResult = hierarchicalResult as RawHierarchicalResult;
+  const transformedResult = {
+    ...rawResult,
+    arguments: rawResult.arguments.map((arg, i: number) => ({
+      ...arg,
+      comment_id: i
+    }))
+  };
+  const result: Result = transformedResult as unknown as Result;
 
   // Client Componentでメタデータを設定
   useEffect(() => {

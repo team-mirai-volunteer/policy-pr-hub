@@ -68,7 +68,7 @@ const ValueCheckbox = React.memo(function ValueCheckbox({
       cursor="pointer"
       onClick={() => onChange(attrName, value)}
     >
-      <Checkbox checked={checked} onChange={() => onChange(attrName, value)}>
+      <Checkbox isChecked={checked} onChange={() => onChange(attrName, value)}>
         {value || "(空)"}
       </Checkbox>
       <Text as="span" fontSize="xs" ml={1} color="gray.500">

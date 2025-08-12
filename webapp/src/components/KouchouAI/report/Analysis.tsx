@@ -52,7 +52,7 @@ export function Analysis({ result }: ReportProps) {
     body: string;
   } | null>(null);
   const clusterNum = getClusterNum(result);
-  const { open, onToggle } = useDisclosure();
+  const { isOpen, onToggle } = useDisclosure();
 
   return (
     <Box mx={"auto"} maxW={"750px"} mb={12} cursor={"default"}>
@@ -126,10 +126,10 @@ export function Analysis({ result }: ReportProps) {
         <Flex align={"center"} mb={5}>
           <Heading fontSize={"md"}>分析手順</Heading>
           <Button variant={"outline"} size={"sm"} ml={2} onClick={onToggle}>
-            {open ? "非表示" : "表示"}
+            {isOpen ? "非表示" : "表示"}
           </Button>
         </Flex>
-        <Collapse in={open}>
+        <Collapse in={isOpen}>
           <TimelineRoot size={"lg"}>
             {result.config.plan.map((p) => (
               <TimelineItem key={p.step}>
@@ -392,7 +392,7 @@ export function Analysis({ result }: ReportProps) {
         </Collapse>
       </Box>
 
-      <DrawerRoot open={!!selectedData} size={"xl"} onOpenChange={() => setSelectedData(null)}>
+      <DrawerRoot isOpen={!!selectedData} onClose={() => setSelectedData(null)}>
         <DrawerBackdrop />
         <DrawerContent>
           <DrawerHeader>
