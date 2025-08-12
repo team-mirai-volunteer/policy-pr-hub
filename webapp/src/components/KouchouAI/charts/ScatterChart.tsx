@@ -397,6 +397,8 @@ export function ScatterChart({
                 zeroline: false,
                 showticklabels: false,
                 showgrid: false,
+                scaleanchor: "x", // x軸に対してy軸のスケールを固定してアスペクト比を保つ
+                scaleratio: 1, // 1:1の比率を維持
               },
               hovermode: "closest",
               dragmode: "pan", // ドラッグによる移動（パン）を有効化
