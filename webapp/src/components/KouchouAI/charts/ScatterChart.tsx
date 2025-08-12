@@ -555,6 +555,7 @@ export function ScatterChart({
   }
 
 
+
   /**
    * 単一アノテーションオブジェクトを作成（引き出し線でのラベル作り）
    * 全体画面でのみ有効な機能として実装
@@ -581,7 +582,13 @@ export function ScatterChart({
 
 
     return {
-      // 引き出し線の先端（クラスターの中央点）
+      // 【重要】Plotlyアノテーションの正しい仕組み（実測結果）：
+      // - (x, y): 引き出し線の先端（ポイント先）
+      // - (ax, ay): テキストが配置される位置＋引き出し線の起点
+      // - 引き出し線は (ax, ay) から (x, y) に向かって描画される
+      // - テキストは (ax, ay) の位置に表示される
+      
+      // 引き出し線の先端（クラスター中央点を指す）
       x: clusterCenterX,
       y: clusterCenterY,
       xref: "x",
@@ -597,7 +604,7 @@ export function ScatterChart({
       arrowwidth: isFullScreen ? 2 : undefined,
       arrowcolor: isFullScreen ? arrowColor : undefined,
 
-      // 引き出し線の起点（ラベルの位置）
+      // 引き出し線の起点＋テキスト表示位置（ラベル位置）
       ax: isFullScreen ? labelX : clusterCenterX,
       ay: isFullScreen ? labelY : clusterCenterY,
       axref: isFullScreen ? "x" : "x",
