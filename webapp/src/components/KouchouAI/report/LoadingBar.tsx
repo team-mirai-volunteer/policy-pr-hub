@@ -1,4 +1,4 @@
-import { HStack, Progress } from "@chakra-ui/react";
+import { HStack, Progress, Text, Box } from "@chakra-ui/react";
 import React from "react";
 
 type Props = {
@@ -8,28 +8,38 @@ type Props = {
 };
 
 export function LoadingBar({ loaded, max, isVisualizing }: Props) {
+  const percentage = max > 0 ? (loaded / max) * 100 : 0;
+
   if (isVisualizing) {
     return (
-      <Progress.Root value={null} size={"xl"} mx={"auto"} p={5} maxW={"800px"} colorPalette={"cyan"}>
-        <HStack gap="5">
-          <Progress.Track flex="1">
-            <Progress.Range />
-          </Progress.Track>
-          <Progress.Label>Visualizing...</Progress.Label>
+      <Box mx="auto" p={5} maxW="800px">
+        <HStack spacing={5}>
+          <Progress 
+            value={undefined} 
+            isIndeterminate 
+            size="lg" 
+            colorScheme="cyan" 
+            flex="1"
+          />
+          <Text>Visualizing...</Text>
         </HStack>
-      </Progress.Root>
+      </Box>
     );
   }
+  
   return (
-    <Progress.Root value={loaded} max={max} size={"xl"} mx={"auto"} p={5} maxW={"800px"} colorPalette={"cyan"}>
-      <HStack gap="5">
-        <Progress.Track flex="1">
-          <Progress.Range />
-        </Progress.Track>
-        <Progress.ValueText>
+    <Box mx="auto" p={5} maxW="800px">
+      <HStack spacing={5}>
+        <Progress 
+          value={percentage} 
+          size="lg" 
+          colorScheme="cyan" 
+          flex="1"
+        />
+        <Text>
           {Math.floor(loaded / 1024).toLocaleString()} KB / {Math.floor(max / 1024).toLocaleString()} KB
-        </Progress.ValueText>
+        </Text>
       </HStack>
-    </Progress.Root>
+    </Box>
   );
 }

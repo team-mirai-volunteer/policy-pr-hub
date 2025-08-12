@@ -1,6 +1,6 @@
 import { AllViewIcon, DenseViewIcon, HierarchyViewIcon } from "@/components/KouchouAI/icons/ViewIcons";
 import { Tooltip } from "@/components/KouchouAI/ui/tooltip";
-import { Box, Button, HStack, Icon, SegmentGroup, Stack } from "@chakra-ui/react";
+import { Box, Button, HStack, Icon, Stack, ButtonGroup } from "@chakra-ui/react";
 import { CogIcon, Filter, FullscreenIcon } from "lucide-react"; // Filter アイコンをインポート
 import type React from "react";
 import type { ComponentType } from "react";
@@ -24,17 +24,10 @@ const SegmentItemWithIcon = (icon: ComponentType, text: string, selected: boolea
       gap={2}
       alignItems="center"
       justifyContent="center"
-      px={4}
-      py={2}
-      position="absolute"
-      top={0}
-      left={0}
-      right={0}
-      bottom={0}
-      color="gray.500"
+      color={selected ? "blue.600" : "gray.500"}
     >
       <Icon as={icon} />
-      <Box fontSize={["14px", null, "16px"]} fontWeight={selected ? "bold" : "normal"} lineHeight="1" textWrap="nowrap">
+      <Box fontSize={["14px", null, "16px"]} fontWeight={selected ? "bold" : "normal"} lineHeight="1">
         {text}
       </Box>
     </Stack>
@@ -71,26 +64,36 @@ export function SelectChartButton({
     },
   ];
 
-  const handleChange = (event: React.FormEvent<HTMLDivElement>) => {
-    const value = (event.target as HTMLInputElement).value;
-    onChange(value);
-  };
-
   return (
     <Box maxW="1200px" mx="auto" mb={2}>
       <Box display="grid" gridTemplateColumns={["1fr", null, "1fr auto"]} gap="3">
-        <SegmentGroup.Root
-          value={selected}
-          onChange={handleChange}
-          size="md"
+        <ButtonGroup 
+          isAttached 
+          variant="outline"
           justifySelf={["center", null, "left", "center"]}
           ml={[0, null, null, "104px"]}
-          w={["100%", null, "auto"]}
-          h={["80px", null, "56px"]}
         >
-          <SegmentGroup.Indicator bg="white" border="1px solid #E4E4E7" boxShadow="0 4px 6px 0 rgba(0, 0, 0, 0.1)" />
-          <SegmentGroup.Items items={items} w={["calc(100% / 3)", null, "162px"]} h="100%" cursor="pointer" />
-        </SegmentGroup.Root>
+          {items.map((item) => (
+            <Tooltip 
+              key={item.value} 
+              content={item.tooltip} 
+              isDisabled={!item.tooltip}
+              openDelay={0} 
+              closeDelay={0}
+            >
+              <Button
+                onClick={() => onChange(item.value)}
+                isActive={selected === item.value}
+                isDisabled={item.isDisabled}
+                w={["calc(33.33%)", null, "162px"]}
+                h={["80px", null, "56px"]}
+                position="relative"
+              >
+                {item.label}
+              </Button>
+            </Tooltip>
+          ))}
+        </ButtonGroup>
 
         <HStack gap={1} justifySelf={["end"]} alignSelf={"center"}>
           {isAttentionFilterEnabled && onClickAttentionFilter && (

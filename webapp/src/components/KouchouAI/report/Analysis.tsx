@@ -27,11 +27,11 @@ import {
   HStack,
   Heading,
   Icon,
-  Presence,
-  Separator,
+  Divider,
   Text,
   VStack,
   useDisclosure,
+  Collapse,
 } from "@chakra-ui/react";
 import {
   ChevronRightIcon,
@@ -56,7 +56,7 @@ export function Analysis({ result }: ReportProps) {
 
   return (
     <Box mx={"auto"} maxW={"750px"} mb={12} cursor={"default"}>
-      <Separator mt={20} mb={12} />
+      <Divider mt={20} mb={12} />
       <Heading textAlign={"center"} fontSize={"xl"} mb={5}>
         分析の概要
       </Heading>
@@ -129,7 +129,7 @@ export function Analysis({ result }: ReportProps) {
             {open ? "非表示" : "表示"}
           </Button>
         </Flex>
-        <Presence present={open}>
+        <Collapse in={open}>
           <TimelineRoot size={"lg"}>
             {result.config.plan.map((p) => (
               <TimelineItem key={p.step}>
@@ -389,7 +389,7 @@ export function Analysis({ result }: ReportProps) {
               </TimelineItem>
             ))}
           </TimelineRoot>
-        </Presence>
+        </Collapse>
       </Box>
 
       <DrawerRoot open={!!selectedData} size={"xl"} onOpenChange={() => setSelectedData(null)}>

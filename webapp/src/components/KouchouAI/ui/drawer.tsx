@@ -1,42 +1,49 @@
-import { Drawer as ChakraDrawer, Portal } from "@chakra-ui/react";
+import { 
+  Drawer,
+  DrawerOverlay,
+  DrawerContent as ChakraDrawerContent,
+  DrawerHeader as ChakraDrawerHeader,
+  DrawerBody as ChakraDrawerBody,
+  DrawerFooter as ChakraDrawerFooter,
+  DrawerCloseButton,
+  Portal 
+} from "@chakra-ui/react";
 import * as React from "react";
 import { CloseButton } from "./close-button";
 
-interface DrawerContentProps extends ChakraDrawer.ContentProps {
+interface DrawerContentProps extends React.ComponentProps<typeof ChakraDrawerContent> {
   portalled?: boolean;
   portalRef?: React.RefObject<HTMLElement>;
-  offset?: ChakraDrawer.ContentProps["padding"];
+  offset?: string | number;
 }
 
 export const DrawerContent = React.forwardRef<HTMLDivElement, DrawerContentProps>(function DrawerContent(props, ref) {
   const { children, portalled = true, portalRef, offset, ...rest } = props;
   return (
-    <Portal disabled={!portalled} container={portalRef}>
-      <ChakraDrawer.Positioner padding={offset}>
-        <ChakraDrawer.Content ref={ref} {...rest} asChild={false}>
-          {children}
-        </ChakraDrawer.Content>
-      </ChakraDrawer.Positioner>
-    </Portal>
+    <>
+      <DrawerOverlay />
+      <ChakraDrawerContent ref={ref} {...rest}>
+        {children}
+      </ChakraDrawerContent>
+    </>
   );
 });
 
-export const DrawerCloseTrigger = React.forwardRef<HTMLButtonElement, ChakraDrawer.CloseTriggerProps>(
+export const DrawerCloseTrigger = React.forwardRef<HTMLButtonElement, any>(
   function DrawerCloseTrigger(props, ref) {
     return (
-      <ChakraDrawer.CloseTrigger position="absolute" top="2" insetEnd="2" {...props} asChild>
-        <CloseButton size="sm" ref={ref} />
-      </ChakraDrawer.CloseTrigger>
+      <DrawerCloseButton ref={ref} {...props} />
     );
   },
 );
 
-export const DrawerTrigger = ChakraDrawer.Trigger;
-export const DrawerRoot = ChakraDrawer.Root;
-export const DrawerFooter = ChakraDrawer.Footer;
-export const DrawerHeader = ChakraDrawer.Header;
-export const DrawerBody = ChakraDrawer.Body;
-export const DrawerBackdrop = ChakraDrawer.Backdrop;
-export const DrawerDescription = ChakraDrawer.Description;
-export const DrawerTitle = ChakraDrawer.Title;
-export const DrawerActionTrigger = ChakraDrawer.ActionTrigger;
+// Chakra UI v2 Drawer components mapped to v3 API
+export const DrawerRoot = Drawer;
+export const DrawerFooter = ChakraDrawerFooter;
+export const DrawerHeader = ChakraDrawerHeader;
+export const DrawerBody = ChakraDrawerBody;
+export const DrawerBackdrop = DrawerOverlay;
+export const DrawerTitle = ChakraDrawerHeader; // In v2, DrawerHeader serves as title
+export const DrawerDescription = ChakraDrawerBody; // In v2, DrawerBody serves as description
+export const DrawerTrigger = ({ children }: { children: React.ReactNode }) => <>{children}</>;
+export const DrawerActionTrigger = ({ children }: { children: React.ReactNode }) => <>{children}</>;

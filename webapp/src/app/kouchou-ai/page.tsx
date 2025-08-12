@@ -7,7 +7,7 @@ import { ClientContainer } from "@/components/KouchouAI/report/ClientContainer";
 import { Overview } from "@/components/KouchouAI/report/Overview";
 import { Reporter } from "@/components/KouchouAI/reporter/Reporter";
 import type { Meta, Result } from "@/type";
-import { Box, Separator } from "@chakra-ui/react";
+import { Box, Divider } from "@chakra-ui/react";
 import type { Metadata } from "next";
 import hierarchicalResult from "@/data/hierarchical_result.json";
 
@@ -37,14 +37,14 @@ export default function Page() {
 
   return (
     <>
-      <div className={"container"}>
+      <div className="container">
         <Header />
         <Overview result={result} />
         <ClientContainer result={result} />
         <Analysis result={result} />
         <BackButton />
-        <Separator my={12} maxW={"750px"} mx={"auto"} />
-        <Box maxW={"750px"} mx={"auto"} mb={24}>
+        <Divider my={12} maxW="750px" mx="auto" />
+        <Box maxW="750px" mx="auto" mb={24}>
           <Reporter meta={meta} />
         </Box>
       </div>
