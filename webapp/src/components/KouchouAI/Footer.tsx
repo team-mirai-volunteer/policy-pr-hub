@@ -94,21 +94,6 @@ export function Footer({ meta }: Props) {
                   <ArrowUpRight />
                 </a>
               </Button>
-              <Dialog title="謝辞" trigger={<Button variant="secondary">謝辞</Button>}>
-                広聴AIは{" "}
-                <Link href="https://ai.objectives.institute/" target="_blank" rel="noopener noreferrer">
-                  AI Objectives Institute
-                </Link>{" "}
-                が開発した{" "}
-                <Link
-                  href="https://github.com/AIObjectives/talk-to-the-city-reports"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Talk to the City
-                </Link>{" "}
-                を参考に開発されています。ライセンスに基づいてソースコードを一部活用し、機能追加や改善を実施しています。
-              </Dialog>
             </Flex>
           </Flex>
         </Flex>
