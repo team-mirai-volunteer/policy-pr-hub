@@ -9,6 +9,8 @@ export type ButtonProps = ChakraButtonProps & {
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
-  const { asChild, ...rest } = props;
+  const { asChild: _, ...rest } = props;
   return <ChakraButton ref={ref} {...rest} />;
 });
+
+Button.displayName = "Button";

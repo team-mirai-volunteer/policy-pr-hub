@@ -112,7 +112,7 @@ export function ClientContainer({ result }: Props) {
 
   // --- 密度フィルタ有効性 ---
   useEffect(() => {
-    const { filtered, isEmpty } = getDenseClusters(result.clusters || [], maxDensity, minValue);
+    const { isEmpty } = getDenseClusters(result.clusters || [], maxDensity, minValue);
     setIsDenseGroupEnabled(!isEmpty);
   }, [maxDensity, minValue, result.clusters]);
 
@@ -150,7 +150,7 @@ export function ClientContainer({ result }: Props) {
             const attrValue = arg.attributes?.[attrName];
             const values = selectedValues;
             if (values.length === 1 && values[0].startsWith("range:")) {
-              const [_, minStr, maxStr] = values[0].split(":");
+              const [, minStr, maxStr] = values[0].split(":");
               const min = Number(minStr);
               const max = Number(maxStr);
               const numValue = Number(attrValue);
@@ -231,9 +231,9 @@ export function ClientContainer({ result }: Props) {
   }
 
   // --- フィルター済み標本 ---
-  const filteredSamples = useMemo(() => {
-    return filterSamples(samples, attributeFilters, numericRanges, enabledRanges, includeEmptyValues);
-  }, [samples, attributeFilters, numericRanges, enabledRanges, includeEmptyValues]);
+  // const filteredSamples = useMemo(() => {
+  //   return filterSamples(samples, attributeFilters, numericRanges, enabledRanges, includeEmptyValues);
+  // }, [samples, attributeFilters, numericRanges, enabledRanges, includeEmptyValues]);
 
   // --- クラスタ表示 ---
   const clustersToDisplay = useMemo(() => {

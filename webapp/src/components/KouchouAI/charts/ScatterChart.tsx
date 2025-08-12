@@ -134,7 +134,7 @@ export function ScatterChart({
     return result;
   };
 
-  const onUpdate = (_event: unknown) => {
+  const onUpdate = () => {
     // Plotly単体で設定できないデザインを、onUpdateのタイミングでHTMLをオーバーライドして解決する
 
     // アノテーションの角を丸にする
@@ -198,7 +198,7 @@ export function ScatterChart({
     const { matching, notMatching } = separateDataByFilter(cluster);
 
     // フィルターが適用されている場合に、クラスター内の全要素がフィルターされていても表示する
-    // @ts-ignore allFilteredプロパティが存在する前提で処理（TypeScript型定義に追加済み）
+    // @ts-expect-error allFilteredプロパティが存在する前提で処理（TypeScript型定義に追加済み）
     const allElementsFiltered = filteredArgumentIds && (matching.length === 0 || cluster.allFiltered);
 
     const notMatchingData =
@@ -328,7 +328,7 @@ export function ScatterChart({
   const annotations: Partial<Annotations>[] = showClusterLabels
     ? clusterDataSets.map((dataSet) => {
         // フィルターされていても背景色を維持（灰色のクラスターでもラベルは元の色で表示）
-        // @ts-ignore allFilteredプロパティが存在する前提で処理（TypeScript型定義に追加済み）
+        // @ts-expect-error allFilteredプロパティが存在する前提で処理（TypeScript型定義に追加済み）
         const isAllFiltered =
           filteredArgumentIds &&
           (separateDataByFilter(dataSet.cluster).matching.length === 0 || dataSet.cluster.allFiltered);
@@ -388,7 +388,7 @@ export function ScatterChart({
           }}
           onHover={onHover}
           onUpdate={onUpdate}
-          onClick={(data: any) => {
+          onClick={(data: { points?: Array<{ customdata?: { arg_id: string; url?: string } }> }) => {
             if (!config?.enable_source_link) return;
 
             try {
