@@ -1,54 +1,42 @@
 "use client";
 
-import type { ButtonProps, RecipeProps } from "@chakra-ui/react";
-import {
-  Button,
-  FileUpload as ChakraFileUpload,
-  Icon,
-  IconButton,
-  Span,
-  Text,
-  useFileUploadContext,
-  useRecipe,
-} from "@chakra-ui/react";
+import { Button, Input, Text, Box } from "@chakra-ui/react";
 import * as React from "react";
-import { LuFile, LuUpload, LuX } from "react-icons/lu";
 
-export interface FileUploadRootProps extends ChakraFileUpload.RootProps {
+export interface FileUploadRootProps {
+  children?: React.ReactNode;
   inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
+  [key: string]: any;
 }
 
 export const FileUploadRoot = React.forwardRef<HTMLInputElement, FileUploadRootProps>(
   function FileUploadRoot(props, ref) {
     const { children, inputProps, ...rest } = props;
     return (
-      <ChakraFileUpload.Root {...rest}>
-        <ChakraFileUpload.HiddenInput ref={ref} {...inputProps} />
+      <Box {...rest}>
+        <Input type="file" ref={ref} {...inputProps} />
         {children}
-      </ChakraFileUpload.Root>
+      </Box>
     );
   },
 );
 
-export interface FileUploadDropzoneProps extends ChakraFileUpload.DropzoneProps {
+export interface FileUploadDropzoneProps {
+  children?: React.ReactNode;
   label: React.ReactNode;
   description?: React.ReactNode;
+  [key: string]: any;
 }
 
 export const FileUploadDropzone = React.forwardRef<HTMLInputElement, FileUploadDropzoneProps>(
   function FileUploadDropzone(props, ref) {
     const { children, label, description, ...rest } = props;
     return (
-      <ChakraFileUpload.Dropzone ref={ref} {...rest}>
-        <Icon fontSize="xl" color="fg.muted">
-          <LuUpload />
-        </Icon>
-        <ChakraFileUpload.DropzoneContent>
-          <div>{label}</div>
-          {description && <Text color="fg.muted">{description}</Text>}
-        </ChakraFileUpload.DropzoneContent>
+      <Box {...rest}>
+        <Text>{label}</Text>
+        {description && <Text color="gray.500">{description}</Text>}
         {children}
-      </ChakraFileUpload.Dropzone>
+      </Box>
     );
   },
 );
@@ -58,92 +46,38 @@ interface VisibilityProps {
   clearable?: boolean;
 }
 
-interface FileUploadItemProps extends VisibilityProps {
-  file: File;
-}
-
-const FileUploadItem = React.forwardRef<HTMLLIElement, FileUploadItemProps>(function FileUploadItem(props, ref) {
-  const { file, showSize, clearable } = props;
-  return (
-    <ChakraFileUpload.Item file={file} ref={ref}>
-      <ChakraFileUpload.ItemPreview asChild>
-        <Icon fontSize="lg" color="fg.muted">
-          <LuFile />
-        </Icon>
-      </ChakraFileUpload.ItemPreview>
-
-      {showSize ? (
-        <ChakraFileUpload.ItemContent>
-          <ChakraFileUpload.ItemName />
-          <ChakraFileUpload.ItemSizeText />
-        </ChakraFileUpload.ItemContent>
-      ) : (
-        <ChakraFileUpload.ItemName flex="1" />
-      )}
-
-      {clearable && (
-        <ChakraFileUpload.ItemDeleteTrigger asChild>
-          <IconButton variant="ghost" color="fg.muted" size="xs">
-            <LuX />
-          </IconButton>
-        </ChakraFileUpload.ItemDeleteTrigger>
-      )}
-    </ChakraFileUpload.Item>
-  );
-});
-
-interface FileUploadListProps extends VisibilityProps, ChakraFileUpload.ItemGroupProps {
+interface FileUploadListProps extends VisibilityProps {
   files?: File[];
+  [key: string]: any;
 }
 
-export const FileUploadList = React.forwardRef<HTMLUListElement, FileUploadListProps>(
+export const FileUploadList = React.forwardRef<HTMLDivElement, FileUploadListProps>(
   function FileUploadList(props, ref) {
     const { showSize, clearable, files, ...rest } = props;
-
-    const fileUpload = useFileUploadContext();
-    const acceptedFiles = files ?? fileUpload.acceptedFiles;
-
-    if (acceptedFiles.length === 0) return null;
-
-    return (
-      <ChakraFileUpload.ItemGroup ref={ref} {...rest}>
-        {acceptedFiles.map((file) => (
-          <FileUploadItem key={file.name} file={file} showSize={showSize} clearable={clearable} />
-        ))}
-      </ChakraFileUpload.ItemGroup>
-    );
+    return <Box {...rest}>File list placeholder</Box>;
   },
 );
 
-type Assign<T, U> = Omit<T, keyof U> & U;
-
-interface FileInputProps extends Assign<ButtonProps, RecipeProps<"input">> {
+interface FileInputProps {
   placeholder?: React.ReactNode;
+  [key: string]: any;
 }
 
 export const FileInput = React.forwardRef<HTMLButtonElement, FileInputProps>(function FileInput(props, ref) {
-  const inputRecipe = useRecipe({ key: "input" });
-  const [recipeProps, restProps] = inputRecipe.splitVariantProps(props);
-  const { placeholder = "Select file(s)", ...rest } = restProps;
+  const { placeholder = "Select file(s)", ...rest } = props;
   return (
-    <ChakraFileUpload.Trigger asChild>
-      <Button unstyled py="0" ref={ref} {...rest} css={[inputRecipe(recipeProps), props.css]}>
-        <ChakraFileUpload.Context>
-          {({ acceptedFiles }) => {
-            if (acceptedFiles.length === 1) {
-              return <span>{acceptedFiles[0].name}</span>;
-            }
-            if (acceptedFiles.length > 1) {
-              return <span>{acceptedFiles.length} files</span>;
-            }
-            return <Span color="fg.subtle">{placeholder}</Span>;
-          }}
-        </ChakraFileUpload.Context>
-      </Button>
-    </ChakraFileUpload.Trigger>
+    <Button ref={ref} {...rest}>
+      {placeholder}
+    </Button>
   );
 });
 
-export const FileUploadLabel = ChakraFileUpload.Label;
-export const FileUploadClearTrigger = ChakraFileUpload.ClearTrigger;
-export const FileUploadTrigger = ChakraFileUpload.Trigger;
+export const FileUploadLabel = ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => (
+  <Text as="label" {...props}>{children}</Text>
+);
+export const FileUploadClearTrigger = ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => (
+  <Button {...props}>{children}</Button>
+);
+export const FileUploadTrigger = ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => (
+  <Button {...props}>{children}</Button>
+);

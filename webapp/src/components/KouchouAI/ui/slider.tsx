@@ -10,17 +10,25 @@ import {
 } from "@chakra-ui/react";
 import * as React from "react";
 
-export interface SliderProps extends React.ComponentProps<typeof ChakraSlider> {
+export interface SliderProps {
   marks?: Array<number | { value: number; label: React.ReactNode }>;
   label?: React.ReactNode;
   showValue?: boolean;
+  value?: number[];
+  defaultValue?: number[];
+  onChange?: (value: number | number[]) => void;
+  onValueChange?: (details: { value: number[] }) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  [key: string]: any;
 }
 
 export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(function Slider(props, ref) {
-  const { marks: marksProp, label, showValue, children, ...rest } = props;
+  const { marks: marksProp, label, showValue, onValueChange, ...rest } = props;
   const [value, setValue] = React.useState(props.defaultValue ?? props.value ?? [0]);
 
-  const marks = marksProp?.map((mark) => {
+  const marks = marksProp?.map((mark: number | { value: number; label: React.ReactNode }) => {
     if (typeof mark === "number") return { value: mark, label: undefined };
     return mark;
   });
@@ -30,6 +38,9 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(function Sli
     setValue(valueArray);
     if (props.onChange) {
       props.onChange(newValue);
+    }
+    if (onValueChange) {
+      onValueChange({ value: valueArray });
     }
   };
 
@@ -47,7 +58,7 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(function Sli
           <SliderFilledTrack />
         </SliderTrack>
         <SliderThumb />
-        {marks?.map((mark) => {
+        {marks?.map((mark: { value: number; label: React.ReactNode | undefined }) => {
           const markValue = typeof mark === "number" ? mark : mark.value;
           const markLabel = typeof mark === "number" ? undefined : mark.label;
           return (

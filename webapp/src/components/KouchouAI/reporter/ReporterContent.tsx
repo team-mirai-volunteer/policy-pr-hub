@@ -75,10 +75,6 @@ export function ReporterContent({ meta, children }: { meta: Meta; children: Reac
         {!meta.isDefault && meta.webLink && (
           <Button
             variant="tertiary"
-            _icon={{
-              width: "14px",
-              height: "14px",
-            }}
             asChild
           >
             <a href={meta.webLink} target="_blank" rel="noopener noreferrer">

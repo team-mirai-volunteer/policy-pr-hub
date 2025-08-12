@@ -1,8 +1,8 @@
-import { RadioCard } from "@chakra-ui/react";
+import { Radio, RadioGroup, Box, Text, VStack, HStack } from "@chakra-ui/react";
 import * as React from "react";
 import { Tooltip } from "./tooltip";
 
-interface RadioCardItemProps extends RadioCard.ItemProps {
+interface RadioCardItemProps {
   icon?: React.ReactElement;
   label?: React.ReactNode;
   description?: React.ReactNode;
@@ -12,6 +12,9 @@ interface RadioCardItemProps extends RadioCard.ItemProps {
   inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
   disabled?: boolean;
   disabledReason?: React.ReactNode;
+  value?: string;
+  children?: React.ReactNode;
+  [key: string]: any;
 }
 
 export const RadioCardItem = React.forwardRef<HTMLInputElement, RadioCardItemProps>(function RadioCardItem(props, ref) {
@@ -21,48 +24,43 @@ export const RadioCardItem = React.forwardRef<HTMLInputElement, RadioCardItemPro
     description,
     addon,
     icon,
-    indicator = <RadioCard.ItemIndicator />,
+    indicator,
     indicatorPlacement = "end",
     disabled,
     disabledReason,
+    value,
+    children,
     ...rest
   } = props;
 
-  const hasContent = label || description || icon;
-  const ContentWrapper = indicator ? RadioCard.ItemContent : React.Fragment;
-
   const cardItem = (
-    <RadioCard.Item
+    <Box
       {...rest}
       data-disabled={disabled}
-      cursor={disabled ? "not-allowed" : rest.cursor}
-      css={
-        disabled
-          ? {
-              opacity: 0.3,
-              // pointerEvents: 'none',
-            }
-          : undefined
-      }
+      cursor={disabled ? "not-allowed" : "pointer"}
+      opacity={disabled ? 0.3 : 1}
+      border="1px solid"
+      borderColor="gray.200"
+      borderRadius="md"
+      p={4}
     >
-      <RadioCard.ItemHiddenInput ref={ref} {...inputProps} />
-      <RadioCard.ItemControl>
-        {indicatorPlacement === "start" && indicator}
-        {hasContent && (
-          <ContentWrapper>
-            {icon}
-            {label && <RadioCard.ItemText>{label}</RadioCard.ItemText>}
-            {description && <RadioCard.ItemDescription>{description}</RadioCard.ItemDescription>}
+      <Radio ref={ref} value={value} isDisabled={disabled} {...inputProps}>
+        <HStack spacing={3}>
+          {indicatorPlacement === "start" && indicator}
+          {icon}
+          <VStack align="start" spacing={1}>
+            {label && <Text fontWeight="medium">{label}</Text>}
+            {description && <Text fontSize="sm" color="gray.600">{description}</Text>}
             {indicatorPlacement === "inside" && indicator}
-          </ContentWrapper>
-        )}
-        {indicatorPlacement === "end" && indicator}
-      </RadioCard.ItemControl>
-      {addon && <RadioCard.ItemAddon>{addon}</RadioCard.ItemAddon>}
-    </RadioCard.Item>
+          </VStack>
+          {indicatorPlacement === "end" && indicator}
+        </HStack>
+        {addon && <Box mt={2}>{addon}</Box>}
+        {children}
+      </Radio>
+    </Box>
   );
 
-  // disabledがtrueかつdisabledReasonが存在する場合はTooltipでラップする
   if (disabled && disabledReason) {
     return (
       <Tooltip content={disabledReason} showArrow>
@@ -74,6 +72,10 @@ export const RadioCardItem = React.forwardRef<HTMLInputElement, RadioCardItemPro
   return cardItem;
 });
 
-export const RadioCardRoot = RadioCard.Root;
-export const RadioCardLabel = RadioCard.Label;
-export const RadioCardItemIndicator = RadioCard.ItemIndicator;
+export const RadioCardRoot = RadioGroup;
+export const RadioCardLabel = ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => (
+  <Text as="label" fontWeight="bold" {...props}>{children}</Text>
+);
+export const RadioCardItemIndicator = ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => (
+  <Box {...props}>{children}</Box>
+);

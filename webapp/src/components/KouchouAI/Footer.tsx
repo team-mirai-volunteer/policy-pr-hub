@@ -142,7 +142,7 @@ export function Footer({ meta }: Props) {
                   <XIcon />
                 </a>
               </Button>
-              <Button variant="secondary" asChild _icon={{ width: "42px", height: "12px" }}>
+              <Button variant="secondary" asChild>
                 <a href="https://note.com/dd2030" rel="noopener noreferrer" target="_blank">
                   <NoteIcon />
                 </a>
