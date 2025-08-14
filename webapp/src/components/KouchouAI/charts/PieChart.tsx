@@ -49,7 +49,7 @@ export function PieChart({ clusters, onHover }: Props) {
     margin: { l: 20, r: 20, b: 20, t: 40 },
     showlegend: true,
     legend: {
-      orientation: "v",
+      orientation: "v" as const,
       x: 1.02,
       y: 0.5,
     },
