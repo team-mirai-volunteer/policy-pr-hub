@@ -678,6 +678,11 @@ export function ScatterChart({
                 zeroline: false,
                 showticklabels: false,
                 showgrid: false,
+                range: (() => {
+                  const bounds = calculateDataBounds();
+                  const radius = calculateCircleRadius();
+                  return [bounds.minX - radius, bounds.maxX + radius];
+                })(),
               },
               yaxis: {
                 zeroline: false,
@@ -685,6 +690,11 @@ export function ScatterChart({
                 showgrid: false,
                 scaleanchor: "x", // x軸に対してy軸のスケールを固定してアスペクト比を保つ
                 scaleratio: 1, // 1:1の比率を維持
+                range: (() => {
+                  const bounds = calculateDataBounds();
+                  const radius = calculateCircleRadius();
+                  return [bounds.minY - radius, bounds.maxY + radius];
+                })(),
               },
               hovermode: "closest",
               dragmode: "pan", // ドラッグによる移動（パン）を有効化
