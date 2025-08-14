@@ -32,6 +32,23 @@ export function PieChart({ clusters, onHover }: Props) {
   const wrapText = (text: string, maxLength: number = 25): string => {
     if (text.length <= maxLength) return text;
     
+    if (maxLength <= 12) {
+      let result = '';
+      let currentLine = '';
+      
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        currentLine += char;
+        
+        if (char.match(/[、。！？\s]/) || currentLine.length >= maxLength) {
+          result += currentLine + '<br>';
+          currentLine = '';
+        }
+      }
+      result += currentLine;
+      return result.replace(/<br>$/, ''); // Remove trailing <br>
+    }
+    
     const breakPoints = /([、。！？\s])/;
     const segments = text.split(breakPoints).filter(s => s.length > 0);
     
@@ -50,7 +67,7 @@ export function PieChart({ clusters, onHover }: Props) {
     return result;
   };
   
-  const wrappedLabels = labels.map(label => wrapText(label, isMobile ? 15 : 25));
+  const wrappedLabels = labels.map(label => wrapText(label, isMobile ? 12 : 25));
   
   const colors = [
     "#b3daa1",
