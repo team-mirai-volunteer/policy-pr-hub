@@ -2,6 +2,7 @@
 import type { Argument, Cluster, Config } from "@/type";
 import { Box } from "@chakra-ui/react";
 import type { Annotations, Data, Layout } from "plotly.js";
+import { Delaunay } from "d3-delaunay";
 import { ChartCore } from "./ChartCore";
 
 type Props = {
@@ -190,170 +191,65 @@ export function ScatterChart({
     };
   };
 
-  // 各クラスターのデータを生成（フィルター対象外を背面に、フィルター対象を前面に描画するため分離）
-  const clusterDataSets = targetClusters.map((cluster) => {
-    // クラスターに属するすべての引数を取得（フィルター状況に関係なく）
-    const allClusterArguments = allArguments.filter((arg) => arg.cluster_ids.includes(cluster.id));
-
-    // クラスター中心はフィルター状況に関わらず、すべての要素から計算
-    const allXValues = allClusterArguments.map((arg) => arg.x);
-    const allYValues = allClusterArguments.map((arg) => arg.y);
-
-    const centerX = allXValues.length > 0 ? allXValues.reduce((sum, val) => sum + val, 0) / allXValues.length : 0;
-    const centerY = allYValues.length > 0 ? allYValues.reduce((sum, val) => sum + val, 0) / allYValues.length : 0;
-
-    // 密度フィルターで除外されたクラスターかどうかをチェック
-    const isDensityFiltered = cluster.densityFiltered;
-
-    // フィルター適用後の表示用データを分離
-    const { matching, notMatching } = separateDataByFilter(cluster);
-
-    // フィルターが適用されている場合に、クラスター内の全要素がフィルターされていても表示する
-    const allElementsFiltered = filteredArgumentIds && (matching.length === 0 || cluster.allFiltered);
-
-    const notMatchingData =
-      notMatching.length > 0 || allElementsFiltered || isDensityFiltered // 密度フィルターされた場合も表示
-        ? {
-          x: isDensityFiltered
-            ? allClusterArguments.map((arg) => arg.x) // 密度フィルターされた場合は全ての引数を表示
-            : notMatching.length > 0 ? notMatching.map((arg) => arg.x) : allClusterArguments.map((arg) => arg.x),
-          y: isDensityFiltered
-            ? allClusterArguments.map((arg) => arg.y) // 密度フィルターされた場合は全ての引数を表示
-            : notMatching.length > 0 ? notMatching.map((arg) => arg.y) : allClusterArguments.map((arg) => arg.y),
-          mode: "markers",
-          marker: {
-            size: isDensityFiltered ? 2 : 7, // 密度フィルターされたクラスターはもっと小さく
-            color: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill("#999999"), // 濃い灰色で不透明に
-            opacity: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill(isDensityFiltered ? 1 : 0.5), // 密度フィルターされたクラスターは不透明
-          },
-          text: Array(isDensityFiltered ? allClusterArguments.length : (notMatching.length > 0 ? notMatching.length : allClusterArguments.length)).fill(""), // ホバーテキストなし
-          type: "scatter",
-          hoverinfo: "skip", // ホバー表示を無効化
+  console.time('Voronoi polygon generation');
+  
+  const clusterPolygonSets = targetClusters.map((cluster) => {
+    const voronoiData = createVoronoiForCluster(cluster.id);
+    if (!voronoiData) return null;
+    
+    const radius = calculateCircleRadius();
+    const polygons: any[] = [];
+    
+    voronoiData.points.forEach((point, index) => {
+      const circle = generateCircle(point.x, point.y, radius);
+      const voronoiCell = voronoiData.voronoi.cellPolygon(index);
+      
+      if (voronoiCell) {
+        polygons.push({
+          type: 'scatter',
+          mode: 'lines',
+          fill: 'toself',
+          x: circle.map(p => p[0]).concat([circle[0][0]]),
+          y: circle.map(p => p[1]).concat([circle[0][1]]),
+          fillcolor: clusterColorMapA[cluster.id],
+          line: { color: clusterColorMap[cluster.id], width: 1 },
           showlegend: false,
-          // argumentのメタデータを埋め込み
-          customdata: isDensityFiltered
-            ? allClusterArguments.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })) // 密度フィルターされた場合は全ての引数
-            : notMatching.length > 0
-              ? notMatching.map((arg) => ({ arg_id: arg.arg_id, url: arg.url }))
-              : allClusterArguments.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })),
-        }
-        : null;
-
-    // フィルター対象のアイテム（前面に描画）
-    const matchingData =
-      matching.length > 0 && !isDensityFiltered // 密度フィルターされたクラスターはmatchingDataを表示しない
-        ? {
-          x: matching.map((arg) => arg.x),
-          y: matching.map((arg) => arg.y),
-          mode: "markers",
-          marker: {
-            size: 10, // 統一サイズでシンプルに
-            color: Array(matching.length).fill(clusterColorMap[cluster.id]),
-            opacity: Array(matching.length).fill(1), // 不透明
-            line: config?.enable_source_link
-              ? {
-                width: 2,
-                color: "#ffffff",
-              }
-              : undefined,
-          },
-          text: matching.map((arg) => {
-            const argumentText = arg.argument.replace(/(.{30})/g, "$1<br />");
-            const urlText = config?.enable_source_link && arg.url ? `<br><b>🔗 クリックしてソースを見る</b>` : "";
-            return `<b>${cluster.label}</b><br>${argumentText}${urlText}`;
-          }),
-          type: "scatter",
-          hoverinfo: "text",
-          hovertemplate: "%{text}<extra></extra>",
-          hoverlabel: {
-            align: "left" as const,
-            bgcolor: "white",
-            bordercolor: clusterColorMap[cluster.id],
-            font: {
-              size: 12,
-              color: "#333",
-            },
-          },
-          showlegend: false,
-          // argumentのメタデータを埋め込み
-          customdata: matching.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })),
-        }
-        : null;
-
-    return {
-      cluster,
-      notMatchingData,
-      matchingData,
-      centerX,
-      centerY,
-    };
-  });
-
-  // 描画用のデータセットを作成（密度フィルターされた点を背景に）
-  const densityFilteredData: any[] = [];
-  const normalData: any[] = [];
-
-  clusterDataSets.forEach((dataSet) => {
-    const isDensityFiltered = dataSet.cluster.densityFiltered;
-
-    const dataToAdd = [];
-
-    // フィルター対象外のデータ（背面に描画）
-    if (dataSet.notMatchingData) {
-      dataToAdd.push(dataSet.notMatchingData);
-    }
-
-    // フィルター対象のデータ（前面に描画）
-    if (dataSet.matchingData) {
-      dataToAdd.push(dataSet.matchingData);
-    }
-
-    // フィルターがない場合の通常表示
-    if (!filteredArgumentIds) {
-      const clusterArguments = allArguments.filter((arg) => arg.cluster_ids.includes(dataSet.cluster.id));
-      if (clusterArguments.length > 0) {
-        dataToAdd.push({
-          x: clusterArguments.map((arg) => arg.x),
-          y: clusterArguments.map((arg) => arg.y),
-          mode: "markers",
-          marker: {
-            size: isDensityFiltered ? 2 : 7, // 密度フィルターされたクラスターは小さく
-            color: isDensityFiltered ? "#999999" : clusterColorMap[dataSet.cluster.id], // 密度フィルターされたクラスターは濃い灰色で不透明
-            opacity: isDensityFiltered ? 1 : 1, // 密度フィルターされたクラスターも不透明
-          },
-          text: isDensityFiltered ?
-            Array(clusterArguments.length).fill("") : // 密度フィルターされたクラスターはホバーテキストなし
-            clusterArguments.map(
-              (arg) => `<b>${dataSet.cluster.label}</b><br>${arg.argument.replace(/(.{30})/g, "$1<br />")}`,
-            ),
-          type: "scattergl",
-          hoverinfo: isDensityFiltered ? "skip" : "text", // 密度フィルターされたクラスターはホバーなし
-          hoverlabel: isDensityFiltered ? undefined : {
-            align: "left" as const,
-            bgcolor: "white",
-            bordercolor: clusterColorMap[dataSet.cluster.id],
-            font: {
-              size: 12,
-              color: "#333",
-            },
-          },
-          showlegend: false,
-          // argumentのメタデータを埋め込み
-          customdata: clusterArguments.map((arg) => ({ arg_id: arg.arg_id, url: arg.url })),
+          hoverinfo: 'skip'
         });
       }
-    }
+    });
+    
+    return { cluster, polygons };
+  }).filter((item): item is { cluster: Cluster; polygons: any[] } => item !== null);
 
-    // 密度フィルターされたデータとそうでないデータを分離
-    if (isDensityFiltered) {
-      densityFilteredData.push(...dataToAdd);
-    } else {
-      normalData.push(...dataToAdd);
+  const plotData: any[] = [];
+  clusterPolygonSets.forEach(({ cluster, polygons }) => {
+    if (!cluster.densityFiltered) {
+      plotData.push(...polygons);
+    }
+  });
+  
+  clusterPolygonSets.forEach(({ cluster }) => {
+    if (!cluster.densityFiltered) {
+      const center = getClusterAnchor(cluster.id);
+      plotData.push({
+        x: [center.x],
+        y: [center.y],
+        mode: 'markers',
+        marker: {
+          size: 8,
+          color: clusterColorMap[cluster.id],
+          opacity: 0.8
+        },
+        text: cluster.label,
+        hoverinfo: 'text',
+        showlegend: false,
+        customdata: [{ cluster_id: cluster.id }]
+      });
     }
   });
 
-  // 密度フィルターされたデータを最初に（背景に）、通常のデータを後に（前景に）描画
-  const plotData = [...densityFilteredData, ...normalData];
+  console.timeEnd('Voronoi polygon generation');
 
   // === ラベル配置のためのヘルパー関数群 ===
 
@@ -448,6 +344,46 @@ export function ScatterChart({
     return { x: best.x, y: best.y };
   }
 
+  /**
+   * Calculate bounding box dimensions and circle radius
+   */
+  function calculateCircleRadius() {
+    const bounds = calculateDataBounds();
+    const width = bounds.maxX - bounds.minX;
+    const height = bounds.maxY - bounds.minY;
+    return Math.max(width, height) * 0.1;
+  }
+
+  /**
+   * Generate circle around a point
+   */
+  function generateCircle(centerX: number, centerY: number, radius: number, segments = 32) {
+    const points = [];
+    for (let i = 0; i < segments; i++) {
+      const angle = (i / segments) * 2 * Math.PI;
+      points.push([
+        centerX + radius * Math.cos(angle),
+        centerY + radius * Math.sin(angle)
+      ]);
+    }
+    return points;
+  }
+
+  /**
+   * Create Voronoi diagram for cluster points
+   */
+  function createVoronoiForCluster(clusterId: string) {
+    const clusterPoints = allArguments.filter(arg => arg.cluster_ids.includes(clusterId));
+    if (clusterPoints.length < 3) return null;
+    
+    const points = clusterPoints.map(arg => [arg.x, arg.y] as [number, number]);
+    const bounds = calculateDataBounds();
+    const delaunay = Delaunay.from(points);
+    const voronoi = delaunay.voronoi([bounds.minX, bounds.minY, bounds.maxX, bounds.maxY]);
+    
+    return { voronoi, points: clusterPoints };
+  }
+
 
 
   /**
@@ -455,7 +391,7 @@ export function ScatterChart({
    * @returns 表示すべきクラスターのリスト
    */
   function getValidClustersForLabels() {
-    return clusterDataSets.filter(dataSet => {
+    return clusterPolygonSets.filter((dataSet: any) => {
       return !dataSet.cluster.densityFiltered;
     });
   }
@@ -476,13 +412,13 @@ export function ScatterChart({
     const dx = (b.maxX - b.minX) * 0.06; // ラベルを外側へ
     const dy = (b.maxY - b.minY) * 0.06;
 
-    const withCenter = valid.map(ds => {
+    const withCenter = valid.map((ds: any) => {
       const a = getClusterAnchor(ds.cluster.id);
-      return { ...ds, centerX: a.x || ds.centerX, centerY: a.y || ds.centerY };
+      return { ...ds, centerX: a.x, centerY: a.y };
     });
 
-    const left  = withCenter.filter(c => c.centerX <= midX).sort((a,b)=>a.centerY-b.centerY);
-    const right = withCenter.filter(c => c.centerX >  midX).sort((a,b)=>a.centerY-b.centerY);
+    const left  = withCenter.filter((c: any) => c.centerX <= midX).sort((a: any, b: any)=>a.centerY-b.centerY);
+    const right = withCenter.filter((c: any) => c.centerX >  midX).sort((a: any, b: any)=>a.centerY-b.centerY);
 
     const MAX_SIDE = 10;
     
