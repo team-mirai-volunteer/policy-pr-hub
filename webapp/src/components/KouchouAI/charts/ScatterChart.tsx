@@ -205,12 +205,12 @@ export function ScatterChart({
   
   const clusterPolygonSets = targetClusters.map((cluster) => {
     const clusterPoints = allArguments.filter(arg => arg.cluster_ids.includes(cluster.id));
-    const polygons: any[] = [];
     
     if (clusterPoints.length === 0) {
-      return { cluster, polygons };
+      return { cluster, polygon: null };
     }
     
+    const individualPolygons: any[] = [];
     clusterPoints.forEach((point) => {
       const pointIndex = allArguments.findIndex(arg => arg.arg_id === point.arg_id);
       if (pointIndex === -1) return;
@@ -220,32 +220,55 @@ export function ScatterChart({
       
       const intersection = intersectCircleWithVoronoi(point.x, point.y, radius, voronoiCell);
       if (intersection && intersection.length >= 3) {
-        polygons.push({
-          type: 'scatter',
-          mode: 'lines',
-          fill: 'toself',
-          x: intersection.map((p: [number, number]) => p[0]).concat([intersection[0][0]]),
-          y: intersection.map((p: [number, number]) => p[1]).concat([intersection[0][1]]),
-          fillcolor: clusterColorMapA[cluster.id],
-          line: { 
-            color: 'transparent', 
-            width: 0
-          },
-          showlegend: false,
-          hoverinfo: 'skip',
-          customdata: [{ cluster_id: cluster.id, arg_id: point.arg_id }]
-        });
+        individualPolygons.push(intersection);
       }
     });
     
-    return { cluster, polygons };
-  }).filter((item): item is { cluster: Cluster; polygons: any[] } => item !== null);
+    if (individualPolygons.length === 0) {
+      return { cluster, polygon: null };
+    }
+    
+    let unionPolygon = individualPolygons[0];
+    
+    for (let i = 1; i < individualPolygons.length; i++) {
+      try {
+        const result = PolyBool.union(
+          { regions: [unionPolygon], inverted: false },
+          { regions: [individualPolygons[i]], inverted: false }
+        );
+        
+        if (result.regions && result.regions.length > 0) {
+          unionPolygon = result.regions[0];
+        }
+      } catch (error) {
+        console.warn('PolyBool union failed for cluster', cluster.id, error);
+      }
+    }
+    
+    const plotlyPolygon = {
+      type: 'scatter',
+      mode: 'lines',
+      fill: 'toself',
+      x: unionPolygon.map((p: [number, number]) => p[0]).concat([unionPolygon[0][0]]),
+      y: unionPolygon.map((p: [number, number]) => p[1]).concat([unionPolygon[0][1]]),
+      fillcolor: clusterColorMapA[cluster.id],
+      line: { 
+        color: 'transparent', 
+        width: 0
+      },
+      showlegend: false,
+      hoverinfo: 'skip',
+      customdata: [{ cluster_id: cluster.id }]
+    };
+    
+    return { cluster, polygon: plotlyPolygon };
+  }).filter((item): item is { cluster: Cluster; polygon: any } => item !== null && item.polygon !== null);
 
   const plotData: any[] = [];
   
-  clusterPolygonSets.forEach(({ cluster, polygons }) => {
-    if (!cluster.densityFiltered) {
-      plotData.push(...polygons);
+  clusterPolygonSets.forEach(({ cluster, polygon }) => {
+    if (!cluster.densityFiltered && polygon) {
+      plotData.push(polygon);
     }
   });
   
