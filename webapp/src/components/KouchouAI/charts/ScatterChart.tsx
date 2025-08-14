@@ -207,21 +207,23 @@ export function ScatterChart({
     const clusterPoints = allArguments.filter(arg => arg.cluster_ids.includes(cluster.id));
     const polygons: any[] = [];
     
-    clusterPoints.forEach((point) => {
-      const pointIndex = allArguments.findIndex(arg => arg.arg_id === point.arg_id);
-      if (pointIndex === -1) return;
-      
-      const voronoiCell = globalVoronoi.voronoi.cellPolygon(pointIndex);
-      if (!voronoiCell) return;
-      
-      const intersection = intersectCircleWithVoronoi(point.x, point.y, radius, voronoiCell);
-      if (intersection && intersection.length >= 3) {
+    if (clusterPoints.length === 0) {
+      return { cluster, polygons };
+    }
+
+    const clusterUnion = createClusterUnion(clusterPoints, radius);
+    if (!clusterUnion || !clusterUnion.regions || clusterUnion.regions.length === 0) {
+      return { cluster, polygons };
+    }
+
+    clusterUnion.regions.forEach((region: any) => {
+      if (region && region.length >= 3) {
         polygons.push({
           type: 'scatter',
           mode: 'lines',
           fill: 'toself',
-          x: intersection.map((p: any) => p[0]).concat([intersection[0][0]]),
-          y: intersection.map((p: any) => p[1]).concat([intersection[0][1]]),
+          x: region.map((p: any) => p[0]).concat([region[0][0]]),
+          y: region.map((p: any) => p[1]).concat([region[0][1]]),
           fillcolor: clusterColorMapA[cluster.id],
           line: { color: clusterColorMap[cluster.id], width: 1 },
           showlegend: false,
@@ -362,7 +364,7 @@ export function ScatterChart({
     const bounds = calculateDataBounds();
     const width = bounds.maxX - bounds.minX;
     const height = bounds.maxY - bounds.minY;
-    return Math.min(width, height) * 0.1;
+    return Math.min(width, height) * 0.05;
   }
 
   /**
@@ -388,8 +390,17 @@ export function ScatterChart({
     
     const points = allArguments.map(arg => [arg.x, arg.y] as [number, number]);
     const bounds = calculateDataBounds();
+    const radius = calculateCircleRadius();
+    
+    const expandedBounds: [number, number, number, number] = [
+      bounds.minX - radius,
+      bounds.minY - radius, 
+      bounds.maxX + radius,
+      bounds.maxY + radius
+    ];
+    
     const delaunay = Delaunay.from(points);
-    const voronoi = delaunay.voronoi([bounds.minX, bounds.minY, bounds.maxX, bounds.maxY]);
+    const voronoi = delaunay.voronoi(expandedBounds);
     
     return { voronoi, points: allArguments };
   }
@@ -431,6 +442,30 @@ export function ScatterChart({
       return intersection.regions[0] || null;
     } catch (error) {
       console.warn('PolyBool intersection failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Create unified cluster polygon by unioning all circles in the cluster
+   */
+  function createClusterUnion(clusterPoints: Argument[], radius: number) {
+    if (clusterPoints.length === 0) return null;
+    if (clusterPoints.length === 1) {
+      return circleToPolygon(clusterPoints[0].x, clusterPoints[0].y, radius);
+    }
+
+    try {
+      let union = circleToPolygon(clusterPoints[0].x, clusterPoints[0].y, radius);
+      
+      for (let i = 1; i < clusterPoints.length; i++) {
+        const circle = circleToPolygon(clusterPoints[i].x, clusterPoints[i].y, radius);
+        union = PolyBool.union(union, circle);
+      }
+      
+      return union;
+    } catch (error) {
+      console.warn('PolyBool union failed:', error);
       return null;
     }
   }
