@@ -3,6 +3,8 @@ import type { Argument, Cluster, Config } from "@/type";
 import { Box } from "@chakra-ui/react";
 import type { Annotations, Data, Layout } from "plotly.js";
 import { Delaunay } from "d3-delaunay";
+// @ts-expect-error - polybooljs doesn't have TypeScript definitions
+import PolyBool from "polybooljs";
 import { ChartCore } from "./ChartCore";
 
 type Props = {
@@ -193,24 +195,33 @@ export function ScatterChart({
 
   console.time('Voronoi polygon generation');
   
+  const globalVoronoi = createGlobalVoronoi();
+  if (!globalVoronoi) {
+    console.error('Failed to create global Voronoi diagram');
+    return <div>Error: Unable to generate Voronoi diagram</div>;
+  }
+
+  const radius = calculateCircleRadius();
+  
   const clusterPolygonSets = targetClusters.map((cluster) => {
-    const voronoiData = createVoronoiForCluster(cluster.id);
-    if (!voronoiData) return null;
-    
-    const radius = calculateCircleRadius();
+    const clusterPoints = allArguments.filter(arg => arg.cluster_ids.includes(cluster.id));
     const polygons: any[] = [];
     
-    voronoiData.points.forEach((point, index) => {
-      const circle = generateCircle(point.x, point.y, radius);
-      const voronoiCell = voronoiData.voronoi.cellPolygon(index);
+    clusterPoints.forEach((point) => {
+      const pointIndex = allArguments.findIndex(arg => arg.arg_id === point.arg_id);
+      if (pointIndex === -1) return;
       
-      if (voronoiCell) {
+      const voronoiCell = globalVoronoi.voronoi.cellPolygon(pointIndex);
+      if (!voronoiCell) return;
+      
+      const intersection = intersectCircleWithVoronoi(point.x, point.y, radius, voronoiCell);
+      if (intersection && intersection.length >= 3) {
         polygons.push({
           type: 'scatter',
           mode: 'lines',
           fill: 'toself',
-          x: circle.map(p => p[0]).concat([circle[0][0]]),
-          y: circle.map(p => p[1]).concat([circle[0][1]]),
+          x: intersection.map((p: any) => p[0]).concat([intersection[0][0]]),
+          y: intersection.map((p: any) => p[1]).concat([intersection[0][1]]),
           fillcolor: clusterColorMapA[cluster.id],
           line: { color: clusterColorMap[cluster.id], width: 1 },
           showlegend: false,
@@ -351,7 +362,7 @@ export function ScatterChart({
     const bounds = calculateDataBounds();
     const width = bounds.maxX - bounds.minX;
     const height = bounds.maxY - bounds.minY;
-    return Math.max(width, height) * 0.1;
+    return Math.min(width, height) * 0.1;
   }
 
   /**
@@ -370,18 +381,58 @@ export function ScatterChart({
   }
 
   /**
-   * Create Voronoi diagram for cluster points
+   * Create global Voronoi diagram for all points
    */
-  function createVoronoiForCluster(clusterId: string) {
-    const clusterPoints = allArguments.filter(arg => arg.cluster_ids.includes(clusterId));
-    if (clusterPoints.length < 3) return null;
+  function createGlobalVoronoi() {
+    if (allArguments.length < 3) return null;
     
-    const points = clusterPoints.map(arg => [arg.x, arg.y] as [number, number]);
+    const points = allArguments.map(arg => [arg.x, arg.y] as [number, number]);
     const bounds = calculateDataBounds();
     const delaunay = Delaunay.from(points);
     const voronoi = delaunay.voronoi([bounds.minX, bounds.minY, bounds.maxX, bounds.maxY]);
     
-    return { voronoi, points: clusterPoints };
+    return { voronoi, points: allArguments };
+  }
+
+  /**
+   * Convert circle to polygon format for PolyBool
+   */
+  function circleToPolygon(centerX: number, centerY: number, radius: number, segments = 32) {
+    const points = [];
+    for (let i = 0; i < segments; i++) {
+      const angle = (i / segments) * 2 * Math.PI;
+      points.push([
+        centerX + radius * Math.cos(angle),
+        centerY + radius * Math.sin(angle)
+      ]);
+    }
+    return { regions: [points], inverted: false };
+  }
+
+  /**
+   * Convert Voronoi cell to PolyBool polygon format
+   */
+  function voronoiCellToPolygon(cell: [number, number][]) {
+    if (!cell || cell.length < 3) return null;
+    return { regions: [cell], inverted: false };
+  }
+
+  /**
+   * Intersect circle with Voronoi cell using PolyBool
+   */
+  function intersectCircleWithVoronoi(centerX: number, centerY: number, radius: number, voronoiCell: [number, number][]) {
+    const circle = circleToPolygon(centerX, centerY, radius);
+    const voronoi = voronoiCellToPolygon(voronoiCell);
+    
+    if (!voronoi) return null;
+    
+    try {
+      const intersection = PolyBool.intersect(circle, voronoi);
+      return intersection.regions[0] || null;
+    } catch (error) {
+      console.warn('PolyBool intersection failed:', error);
+      return null;
+    }
   }
 
 
