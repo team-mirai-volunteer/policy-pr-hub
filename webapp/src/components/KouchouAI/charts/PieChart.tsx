@@ -26,6 +26,32 @@ export function PieChart({ clusters, onHover }: Props) {
   const labels = level1Clusters.map(cluster => cluster.label);
   const values = level1Clusters.map(cluster => cluster.value || cluster.count || 0);
   
+  const total = values.reduce((sum, value) => sum + value, 0);
+  const percentages = values.map(value => (value / total) * 100);
+  
+  const wrapText = (text: string, maxLength: number = 25): string => {
+    if (text.length <= maxLength) return text;
+    
+    const breakPoints = /([、。！？\s])/;
+    const segments = text.split(breakPoints).filter(s => s.length > 0);
+    
+    let result = '';
+    let currentLine = '';
+    
+    for (const segment of segments) {
+      if (currentLine.length + segment.length > maxLength && currentLine.length > 0) {
+        result += currentLine + '<br>';
+        currentLine = segment;
+      } else {
+        currentLine += segment;
+      }
+    }
+    result += currentLine;
+    return result;
+  };
+  
+  const wrappedLabels = labels.map(label => wrapText(label));
+  
   const colors = [
     "#b3daa1",
     "#f5c5d7",
@@ -50,9 +76,12 @@ export function PieChart({ clusters, onHover }: Props) {
         width: 2,
       },
     },
-    textinfo: isMobile ? "percent" : "label+percent",
+    textinfo: "text",
     textposition: "auto",
-    hovertemplate: "%{label}<br>%{value:,}件<br>%{percent}<extra></extra>",
+    text: percentages.map((pct, index) => pct < 2 ? "" : (isMobile ? `${pct.toFixed(1)}%` : `${labels[index]} ${pct.toFixed(1)}%`)),
+    hovertemplate: wrappedLabels.map((wrappedLabel, index) => 
+      `${wrappedLabel}<br>%{value:,}件<br>%{percent}<extra></extra>`
+    ),
     hoverlabel: {
       align: "left",
     },
