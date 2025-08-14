@@ -1,5 +1,5 @@
 import { ScatterChart } from "@/components/KouchouAI/charts/ScatterChart";
-import { TreemapChart } from "@/components/KouchouAI/charts/TreemapChart";
+import { SunburstChart } from "@/components/KouchouAI/charts/SunburstChart";
 import { Tooltip } from "@/components/KouchouAI/ui/tooltip";
 import type { Result } from "@/type";
 import { Box, Button, HStack, Icon, Modal, ModalOverlay, ModalContent, useDisclosure } from "@chakra-ui/react";
@@ -128,7 +128,7 @@ export function Chart({
               />
             )}
             {selectedChart === "treemap" && (
-              <TreemapChart
+              <SunburstChart
                 key={treemapLevel}
                 clusterList={result.clusters}
                 argumentList={result.arguments}
@@ -148,7 +148,7 @@ export function Chart({
     <Box mx={"auto"} w={"100%"} maxW={"1200px"} mb={10} border={"1px solid #ccc"}>
       <Box h={"500px"} mb={0}>
         {selectedChart === "treemap" && (
-          <TreemapChart
+          <SunburstChart
             key={treemapLevel}
             clusterList={result.clusters}
             argumentList={result.arguments}
