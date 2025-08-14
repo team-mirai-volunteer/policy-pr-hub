@@ -22,6 +22,7 @@
     "dotenv": "^17.2.1",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.539.0",
+    "martinez-polygon-clipping": "^0.7.4",
     "next": "15.4.4",
     "plotly.js": "^3.0.3",
     "react": "19.1.0",

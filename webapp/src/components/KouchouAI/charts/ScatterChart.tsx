@@ -3,8 +3,7 @@ import type { Argument, Cluster, Config } from "@/type";
 import { Box } from "@chakra-ui/react";
 import type { Annotations, Data, Layout } from "plotly.js";
 import { Delaunay } from "d3-delaunay";
-// @ts-expect-error - polybooljs doesn't have TypeScript definitions
-import PolyBool from "polybooljs";
+import * as martinez from "martinez-polygon-clipping";
 import { ChartCore } from "./ChartCore";
 
 type Props = {
@@ -203,79 +202,126 @@ export function ScatterChart({
 
   const radius = calculateCircleRadius();
   
-  const clusterPolygonSets = targetClusters.map((cluster) => {
-    const clusterPoints = allArguments.filter(arg => arg.cluster_ids.includes(cluster.id));
-    
-    if (clusterPoints.length === 0) {
-      return { cluster, polygon: null };
-    }
-    
-    const individualPolygons: any[] = [];
-    clusterPoints.forEach((point) => {
-      const pointIndex = allArguments.findIndex(arg => arg.arg_id === point.arg_id);
-      if (pointIndex === -1) return;
-      
-      const voronoiCell = globalVoronoi.voronoi.cellPolygon(pointIndex);
-      if (!voronoiCell) return;
-      
-      const intersection = intersectCircleWithVoronoi(point.x, point.y, radius, voronoiCell);
-      if (intersection && intersection.length >= 3) {
-        individualPolygons.push(intersection);
-      }
-    });
-    
-    if (individualPolygons.length === 0) {
-      return { cluster, polygon: null };
-    }
-    
-    let unionPolygon = individualPolygons[0];
-    
-    for (let i = 1; i < individualPolygons.length; i++) {
-      try {
-        const result = PolyBool.union(
-          { regions: [unionPolygon], inverted: false },
-          { regions: [individualPolygons[i]], inverted: false }
-        );
-        
-        if (result.regions && result.regions.length > 0) {
-          unionPolygon = result.regions[0];
-        }
-      } catch (error) {
-        console.warn('PolyBool union failed for cluster', cluster.id, error);
-      }
-    }
-    
-    const plotlyPolygon = {
-      type: 'scatter',
-      mode: 'lines',
-      fill: 'toself',
-      x: unionPolygon.map((p: [number, number]) => p[0]).concat([unionPolygon[0][0]]),
-      y: unionPolygon.map((p: [number, number]) => p[1]).concat([unionPolygon[0][1]]),
-      fillcolor: clusterColorMapA[cluster.id],
-      line: { 
-        color: 'transparent', 
-        width: 0
-      },
-      showlegend: false,
-      hoverinfo: 'skip',
-      customdata: [{ cluster_id: cluster.id }]
-    };
-    
-    return { cluster, polygon: plotlyPolygon };
-  }).filter((item): item is { cluster: Cluster; polygon: any } => item !== null && item.polygon !== null);
-
-  const plotData: any[] = [];
+  console.time('Per-point intersections');
+  const perPointPieces: { cluster: string; poly: [number, number][][][] }[] = [];
   
-  clusterPolygonSets.forEach(({ cluster, polygon }) => {
-    if (!cluster.densityFiltered && polygon) {
-      plotData.push(polygon);
+  console.log('Debug: Starting per-point intersections for', allArguments.length, 'points');
+  
+  allArguments.forEach((point, i) => {
+    if (i % 50 === 0) {
+      console.log('Debug: Processing point', i, 'of', allArguments.length);
+    }
+    const cell = globalVoronoi.voronoi.cellPolygon(i) as [number, number][];
+    if (!cell || cell.length < 3) return;
+
+    ensureClosed(cell);
+    const circle = circlePoly(point.x, point.y, radius);
+
+    try {
+      const intersection = martinez.intersection([[[...cell]]], [[[...circle]]]);
+      
+      if (intersection && intersection.length > 0) {
+        const clusterId = point.cluster_ids[0]; // Use first cluster for simplicity
+        if (clusterId) {
+          perPointPieces.push({ 
+            cluster: clusterId, 
+            poly: intersection as [number, number][][][] 
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('Martinez intersection failed for point', i, error);
     }
   });
+
+  console.timeEnd('Per-point intersections');
+  console.log('Debug: Collected', perPointPieces.length, 'polygon pieces');
+  console.time('Per-cluster union');
+
+  const byClusterMap = new Map<string, [number, number][][][]>();
   
-  const clusterBoundaries = createClusterBoundaries();
-  plotData.push(...clusterBoundaries);
+  for (const piece of perPointPieces) {
+    const list = byClusterMap.get(piece.cluster) ?? [];
+    list.push(piece.poly);
+    byClusterMap.set(piece.cluster, list);
+  }
+
+  function unionMulti(a: [number, number][][][], b: [number, number][][][]) {
+    try {
+      return martinez.union(a, b) as [number, number][][][];
+    } catch (error) {
+      console.warn('Martinez union failed:', error);
+      return a; // Return first operand as fallback
+    }
+  }
+
+  const clusterPolys = new Map<string, [number, number][][][]>();
   
-  clusterPolygonSets.forEach(({ cluster }) => {
+  for (const [clusterId, parts] of byClusterMap) {
+    console.log('Debug: Processing cluster', clusterId, 'with', parts.length, 'parts');
+    if (parts.length === 0) continue;
+    
+    let acc = parts[0];
+    for (let i = 1; i < parts.length; i++) {
+      if (i % 10 === 0) {
+        console.log('Debug: Union operation', i, 'of', parts.length - 1, 'for cluster', clusterId);
+      }
+      acc = unionMulti(acc, parts[i]);
+    }
+    clusterPolys.set(clusterId, acc);
+  }
+
+  console.timeEnd('Per-cluster union');
+  console.time('Trace building');
+
+  const clusterPolygonSets: any[] = [];
+  
+  for (const [clusterId, multiPoly] of clusterPolys) {
+    for (const poly of multiPoly) {
+      const outer = poly[0];
+      const holes = poly.slice(1);
+
+      const x = outer.map(p => p[0]);
+      const y = outer.map(p => p[1]);
+      clusterPolygonSets.push({
+        type: 'scattergl',
+        mode: 'lines',
+        fill: 'toself',
+        x: [...x, x[0]],
+        y: [...y, y[0]],
+        line: { width: 0 },
+        fillcolor: clusterColorMapA[clusterId],
+        hoverinfo: 'skip',
+        showlegend: false,
+        customdata: [{ cluster_id: clusterId }]
+      });
+
+      for (const hole of holes) {
+        const hx = hole.map(p => p[0]);
+        const hy = hole.map(p => p[1]);
+        clusterPolygonSets.push({
+          type: 'scattergl',
+          mode: 'lines',
+          fill: 'toself',
+          x: [...hx, hx[0]],
+          y: [...hy, hy[0]],
+          line: { width: 0 },
+          fillcolor: '#ffffff', // Background color for holes
+          hoverinfo: 'skip',
+          showlegend: false,
+        });
+      }
+    }
+  }
+
+  console.timeEnd('Trace building');
+
+  const plotData: any[] = [
+    ...clusterPolygonSets,
+    ...createClusterBoundaries(),
+  ];
+  
+  targetClusters.forEach((cluster) => {
     if (!cluster.densityFiltered) {
       const center = getClusterAnchor(cluster.id);
       plotData.push({
@@ -295,6 +341,18 @@ export function ScatterChart({
     }
   });
 
+  clusterPolys.forEach((multiPoly, clusterId) => {
+    if (Array.from(clusterPolys.keys()).indexOf(clusterId) < 3) {
+      console.log(`Debug cluster ${clusterId} multiPoly:`, {
+        polygonCount: multiPoly.length,
+        firstPolygonRings: multiPoly[0]?.length || 0,
+        firstRingPoints: multiPoly[0]?.[0]?.length || 0
+      });
+    }
+  });
+  
+  console.log('Debug: final plotData length:', plotData.length);
+  console.log('Debug: plotData sample:', plotData.slice(0, 2));
   console.timeEnd('Voronoi polygon generation');
 
   // === ラベル配置のためのヘルパー関数群 ===
@@ -439,43 +497,35 @@ export function ScatterChart({
   }
 
   /**
-   * Convert circle to polygon format for PolyBool
+   * Create unit circle polygon for reuse
    */
-  function circleToPolygon(centerX: number, centerY: number, radius: number, segments = 32) {
-    const points = [];
+  function unitCirclePolygon(segments = 24): [number, number][] {
+    const points: [number, number][] = [];
     for (let i = 0; i < segments; i++) {
-      const angle = (i / segments) * 2 * Math.PI;
-      points.push([
-        centerX + radius * Math.cos(angle),
-        centerY + radius * Math.sin(angle)
-      ]);
+      const angle = (2 * Math.PI * i) / segments;
+      points.push([Math.cos(angle), Math.sin(angle)]);
     }
-    return { regions: [points], inverted: false };
+    points.push(points[0]);
+    return points;
+  }
+
+  const unitCircle = unitCirclePolygon(24);
+
+  /**
+   * Create circle polygon by scaling and translating unit circle
+   */
+  function circlePoly(cx: number, cy: number, r: number): [number, number][] {
+    return unitCircle.map(([ux, uy]) => [cx + r * ux, cy + r * uy]);
   }
 
   /**
-   * Convert Voronoi cell to PolyBool polygon format
+   * Ensure polygon ring is closed
    */
-  function voronoiCellToPolygon(cell: [number, number][]) {
-    if (!cell || cell.length < 3) return null;
-    return { regions: [cell], inverted: false };
-  }
-
-  /**
-   * Intersect circle with Voronoi cell using PolyBool
-   */
-  function intersectCircleWithVoronoi(centerX: number, centerY: number, radius: number, voronoiCell: [number, number][]) {
-    const circle = circleToPolygon(centerX, centerY, radius);
-    const voronoi = voronoiCellToPolygon(voronoiCell);
-    
-    if (!voronoi) return null;
-    
-    try {
-      const intersection = PolyBool.intersect(circle, voronoi);
-      return intersection.regions[0] || null;
-    } catch (error) {
-      console.warn('PolyBool intersection failed:', error);
-      return null;
+  function ensureClosed(poly: [number, number][]) {
+    const first = poly[0];
+    const last = poly[poly.length - 1];
+    if (first[0] !== last[0] || first[1] !== last[1]) {
+      poly.push([first[0], first[1]]);
     }
   }
 
