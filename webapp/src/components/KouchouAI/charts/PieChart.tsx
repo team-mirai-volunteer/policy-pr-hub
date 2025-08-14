@@ -96,9 +96,14 @@ export function PieChart({ clusters, onHover }: Props) {
     textinfo: "text",
     textposition: "auto",
     text: percentages.map((pct, index) => pct < 2 ? "" : (isMobile ? `${pct.toFixed(1)}%` : `${labels[index]} ${pct.toFixed(1)}%`)),
-    hovertemplate: wrappedLabels.map((wrappedLabel, index) => 
-      `${wrappedLabel}<br>%{value:,}件<br>%{percent}<extra></extra>`
-    ),
+    hovertemplate: isMobile 
+      ? labels.map((label, index) => {
+          const shortLabel = label.length > 12 ? label.substring(0, 12) + "..." : label;
+          return `${shortLabel}<br>%{value:,}件<br>%{percent}<extra></extra>`;
+        })
+      : wrappedLabels.map((wrappedLabel, index) => 
+          `${wrappedLabel}<br>%{value:,}件<br>%{percent}<extra></extra>`
+        ),
     hoverlabel: {
       align: "left",
     },
