@@ -210,24 +210,30 @@ export function ScatterChart({
     if (clusterPoints.length === 0) {
       return { cluster, polygons };
     }
-
-    const clusterUnion = createClusterUnion(clusterPoints, radius);
-    if (!clusterUnion || !clusterUnion.regions || clusterUnion.regions.length === 0) {
-      return { cluster, polygons };
-    }
-
-    clusterUnion.regions.forEach((region: any) => {
-      if (region && region.length >= 3) {
+    
+    clusterPoints.forEach((point) => {
+      const pointIndex = allArguments.findIndex(arg => arg.arg_id === point.arg_id);
+      if (pointIndex === -1) return;
+      
+      const voronoiCell = globalVoronoi.voronoi.cellPolygon(pointIndex);
+      if (!voronoiCell) return;
+      
+      const intersection = intersectCircleWithVoronoi(point.x, point.y, radius, voronoiCell);
+      if (intersection && intersection.length >= 3) {
         polygons.push({
           type: 'scatter',
           mode: 'lines',
           fill: 'toself',
-          x: region.map((p: any) => p[0]).concat([region[0][0]]),
-          y: region.map((p: any) => p[1]).concat([region[0][1]]),
+          x: intersection.map((p: [number, number]) => p[0]).concat([intersection[0][0]]),
+          y: intersection.map((p: [number, number]) => p[1]).concat([intersection[0][1]]),
           fillcolor: clusterColorMapA[cluster.id],
-          line: { color: clusterColorMap[cluster.id], width: 1 },
+          line: { 
+            color: 'transparent', 
+            width: 0
+          },
           showlegend: false,
-          hoverinfo: 'skip'
+          hoverinfo: 'skip',
+          customdata: [{ cluster_id: cluster.id, arg_id: point.arg_id }]
         });
       }
     });
@@ -236,11 +242,15 @@ export function ScatterChart({
   }).filter((item): item is { cluster: Cluster; polygons: any[] } => item !== null);
 
   const plotData: any[] = [];
+  
   clusterPolygonSets.forEach(({ cluster, polygons }) => {
     if (!cluster.densityFiltered) {
       plotData.push(...polygons);
     }
   });
+  
+  const clusterBoundaries = createClusterBoundaries();
+  plotData.push(...clusterBoundaries);
   
   clusterPolygonSets.forEach(({ cluster }) => {
     if (!cluster.densityFiltered) {
@@ -447,29 +457,102 @@ export function ScatterChart({
   }
 
   /**
-   * Create unified cluster polygon by unioning all circles in the cluster
+   * 異なるクラスタ間の境界を描画する関数
    */
-  function createClusterUnion(clusterPoints: Argument[], radius: number) {
-    if (clusterPoints.length === 0) return null;
-    if (clusterPoints.length === 1) {
-      return circleToPolygon(clusterPoints[0].x, clusterPoints[0].y, radius);
-    }
-
-    try {
-      let union = circleToPolygon(clusterPoints[0].x, clusterPoints[0].y, radius);
+  function createClusterBoundaries() {
+    if (!globalVoronoi || allArguments.length < 3) return [];
+    
+    const boundaries: any[] = [];
+    const processedEdges = new Set<string>();
+    
+    for (let i = 0; i < allArguments.length; i++) {
+      const point1 = allArguments[i];
       
-      for (let i = 1; i < clusterPoints.length; i++) {
-        const circle = circleToPolygon(clusterPoints[i].x, clusterPoints[i].y, radius);
-        union = PolyBool.union(union, circle);
+      const neighbors = globalVoronoi.voronoi.neighbors(i);
+      
+      for (const j of neighbors) {
+        if (j >= allArguments.length) continue; // 範囲外のインデックスをスキップ
+        
+        const point2 = allArguments[j];
+        
+        const hasCommonCluster = point1.cluster_ids.some(id => point2.cluster_ids.includes(id));
+        if (!hasCommonCluster) {
+          const edgeId = [i, j].sort().join('-');
+          if (processedEdges.has(edgeId)) continue;
+          processedEdges.add(edgeId);
+          
+          const cell1 = globalVoronoi.voronoi.cellPolygon(i);
+          const cell2 = globalVoronoi.voronoi.cellPolygon(j);
+          
+          if (cell1 && cell2) {
+            const sharedEdge = findSharedEdge(cell1, cell2);
+            if (sharedEdge && sharedEdge.length === 2) {
+              boundaries.push({
+                type: 'scatter',
+                mode: 'lines',
+                x: [sharedEdge[0][0], sharedEdge[1][0]],
+                y: [sharedEdge[0][1], sharedEdge[1][1]],
+                line: { color: '#000000', width: 1.5 },
+                showlegend: false,
+                hoverinfo: 'skip'
+              });
+            }
+          }
+        }
       }
-      
-      return union;
-    } catch (error) {
-      console.warn('PolyBool union failed:', error);
-      return null;
     }
+    
+    return boundaries;
   }
-
+  
+  /**
+   * 2つのポリゴン間の共通の点を見つける
+   */
+  /**
+   * 2つのボロノイセル間の共有エッジを見つける
+   */
+  function findSharedEdge(cell1: [number, number][], cell2: [number, number][]) {
+    if (!cell1 || !cell2 || cell1.length < 3 || cell2.length < 3) return null;
+    
+    const edges1 = generateEdges(cell1);
+    const edges2 = generateEdges(cell2);
+    
+    for (const edge1 of edges1) {
+      for (const edge2 of edges2) {
+        if (areEdgesEqual(edge1, edge2) || areEdgesEqual(edge1, [edge2[1], edge2[0]])) {
+          return edge1;
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * ポリゴンからエッジのリストを生成
+   */
+  function generateEdges(polygon: [number, number][]): Array<[[number, number], [number, number]]> {
+    const edges: Array<[[number, number], [number, number]]> = [];
+    
+    for (let i = 0; i < polygon.length; i++) {
+      const nextIdx = (i + 1) % polygon.length;
+      edges.push([polygon[i], polygon[nextIdx]]);
+    }
+    
+    return edges;
+  }
+  
+  /**
+   * 2つのエッジが等しいかどうかを判定
+   */
+  function areEdgesEqual(edge1: [[number, number], [number, number]], edge2: [[number, number], [number, number]]) {
+    return (
+      Math.abs(edge1[0][0] - edge2[0][0]) < 0.0001 &&
+      Math.abs(edge1[0][1] - edge2[0][1]) < 0.0001 &&
+      Math.abs(edge1[1][0] - edge2[1][0]) < 0.0001 &&
+      Math.abs(edge1[1][1] - edge2[1][1]) < 0.0001
+    );
+  }
 
 
   /**
