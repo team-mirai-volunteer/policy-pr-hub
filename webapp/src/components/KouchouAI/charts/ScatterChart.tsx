@@ -192,8 +192,6 @@ export function ScatterChart({
     };
   };
 
-  console.time('Voronoi polygon generation');
-  
   const globalVoronoi = createGlobalVoronoi();
   if (!globalVoronoi) {
     console.error('Failed to create global Voronoi diagram');
@@ -202,22 +200,17 @@ export function ScatterChart({
 
   const radius = calculateCircleRadius();
   
-  console.time('Per-point intersections');
-  const perPointPieces: { cluster: string; poly: [number, number][][][] }[] = [];
+  const perPointPieces: { cluster: string; poly: number[][][] }[] = [];
   
-  console.log('Debug: Starting per-point intersections for', allArguments.length, 'points');
-  
-  allArguments.forEach((point, i) => {
-    if (i % 50 === 0) {
-      console.log('Debug: Processing point', i, 'of', allArguments.length);
-    }
-    const cell = globalVoronoi.voronoi.cellPolygon(i) as [number, number][];
-    if (!cell || cell.length < 3) return;
-
-    ensureClosed(cell);
-    const circle = circlePoly(point.x, point.y, radius);
-
+  for (let i = 0; i < allArguments.length; i++) {
     try {
+      const point = allArguments[i];
+      const cell = globalVoronoi.voronoi.cellPolygon(i) as [number, number][];
+      if (!cell || cell.length < 3) continue;
+
+      ensureClosed(cell);
+      const circle = circlePoly(point.x, point.y, radius);
+
       const intersection = martinez.intersection([[[...cell]]], [[[...circle]]]);
       
       if (intersection && intersection.length > 0) {
@@ -225,20 +218,18 @@ export function ScatterChart({
         if (clusterId) {
           perPointPieces.push({ 
             cluster: clusterId, 
-            poly: intersection as [number, number][][][] 
+            poly: intersection as number[][][] 
           });
         }
       }
     } catch (error) {
       console.warn('Martinez intersection failed for point', i, error);
+      continue;
     }
-  });
+  }
 
-  console.timeEnd('Per-point intersections');
-  console.log('Debug: Collected', perPointPieces.length, 'polygon pieces');
-  console.time('Per-cluster union');
 
-  const byClusterMap = new Map<string, [number, number][][][]>();
+  const byClusterMap = new Map<string, number[][][][]>();
   
   for (const piece of perPointPieces) {
     const list = byClusterMap.get(piece.cluster) ?? [];
@@ -246,43 +237,41 @@ export function ScatterChart({
     byClusterMap.set(piece.cluster, list);
   }
 
-  function unionMulti(a: [number, number][][][], b: [number, number][][][]) {
+  function unionMulti(a: number[][][], b: number[][][]): number[][][] {
     try {
-      return martinez.union(a, b) as [number, number][][][];
+      const result = martinez.union(a, b);
+      if (result && Array.isArray(result[0]) && Array.isArray(result[0][0]) && !Array.isArray(result[0][0][0])) {
+        return [result as unknown as number[][]];
+      }
+      return result as number[][][];
     } catch (error) {
       console.warn('Martinez union failed:', error);
       return a; // Return first operand as fallback
     }
   }
 
-  const clusterPolys = new Map<string, [number, number][][][]>();
+  const clusterPolys = new Map<string, number[][][]>();
   
   for (const [clusterId, parts] of byClusterMap) {
-    console.log('Debug: Processing cluster', clusterId, 'with', parts.length, 'parts');
     if (parts.length === 0) continue;
     
     let acc = parts[0];
     for (let i = 1; i < parts.length; i++) {
-      if (i % 10 === 0) {
-        console.log('Debug: Union operation', i, 'of', parts.length - 1, 'for cluster', clusterId);
-      }
       acc = unionMulti(acc, parts[i]);
     }
     clusterPolys.set(clusterId, acc);
   }
 
-  console.timeEnd('Per-cluster union');
-  console.time('Trace building');
 
   const clusterPolygonSets: any[] = [];
   
   for (const [clusterId, multiPoly] of clusterPolys) {
     for (const poly of multiPoly) {
-      const outer = poly[0];
-      const holes = poly.slice(1);
+      const outer = poly[0] as unknown as number[][];
+      const holes = poly.slice(1) as unknown as number[][][];
 
-      const x = outer.map(p => p[0]);
-      const y = outer.map(p => p[1]);
+      const x = outer.map((p: number[]) => p[0]);
+      const y = outer.map((p: number[]) => p[1]);
       clusterPolygonSets.push({
         type: 'scattergl',
         mode: 'lines',
@@ -297,8 +286,8 @@ export function ScatterChart({
       });
 
       for (const hole of holes) {
-        const hx = hole.map(p => p[0]);
-        const hy = hole.map(p => p[1]);
+        const hx = hole.map((p: number[]) => p[0]);
+        const hy = hole.map((p: number[]) => p[1]);
         clusterPolygonSets.push({
           type: 'scattergl',
           mode: 'lines',
@@ -314,7 +303,6 @@ export function ScatterChart({
     }
   }
 
-  console.timeEnd('Trace building');
 
   const plotData: any[] = [
     ...clusterPolygonSets,
@@ -341,19 +329,6 @@ export function ScatterChart({
     }
   });
 
-  clusterPolys.forEach((multiPoly, clusterId) => {
-    if (Array.from(clusterPolys.keys()).indexOf(clusterId) < 3) {
-      console.log(`Debug cluster ${clusterId} multiPoly:`, {
-        polygonCount: multiPoly.length,
-        firstPolygonRings: multiPoly[0]?.length || 0,
-        firstRingPoints: multiPoly[0]?.[0]?.length || 0
-      });
-    }
-  });
-  
-  console.log('Debug: final plotData length:', plotData.length);
-  console.log('Debug: plotData sample:', plotData.slice(0, 2));
-  console.timeEnd('Voronoi polygon generation');
 
   // === ラベル配置のためのヘルパー関数群 ===
 
@@ -509,12 +484,11 @@ export function ScatterChart({
     return points;
   }
 
-  const unitCircle = unitCirclePolygon(24);
-
   /**
    * Create circle polygon by scaling and translating unit circle
    */
   function circlePoly(cx: number, cy: number, r: number): [number, number][] {
+    const unitCircle = unitCirclePolygon(24);
     return unitCircle.map(([ux, uy]) => [cx + r * ux, cy + r * uy]);
   }
 
@@ -633,9 +607,11 @@ export function ScatterChart({
    * @returns 表示すべきクラスターのリスト
    */
   function getValidClustersForLabels() {
-    return clusterPolygonSets.filter((dataSet: any) => {
-      return !dataSet.cluster.densityFiltered;
-    });
+    return targetClusters.filter((cluster: Cluster) => {
+      return !cluster.densityFiltered;
+    }).map((cluster: Cluster) => ({
+      cluster: cluster
+    }));
   }
 
 
@@ -887,11 +863,9 @@ export function ScatterChart({
                     if (matchedArgument?.url) {
                       window.open(matchedArgument.url, "_blank", "noopener,noreferrer");
                     } else {
-                      console.log("No URL found for argument:", customData.arg_id);
                     }
                   }
                 } else {
-                  console.log("No customdata found in clicked point");
                 }
               }
             } catch (error) {
