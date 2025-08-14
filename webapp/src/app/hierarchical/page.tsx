@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import HierarchicalBulletList from '@/components/HierarchicalBulletList'
+import { PieChart } from '@/components/KouchouAI/charts/PieChart'
 import { loadHierarchicalData } from '@/lib/hierarchicalData'
 import { HierarchicalData } from '@/types/hierarchical'
 
@@ -47,6 +48,10 @@ export default function HierarchicalPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="card rounded-lg shadow-sm border p-6 mb-6">
+        <PieChart clusters={data.clusters} />
+      </div>
+
       <div className="card rounded-lg shadow-sm border p-6">
         <HierarchicalBulletList data={data} />
       </div>
