@@ -10,10 +10,11 @@ export const ChartCore = dynamic(
     const Scatter = await import("plotly.js/lib/scatter");
     const Sunburst = await import("plotly.js/lib/sunburst");
     const Treemap = await import("plotly.js/lib/treemap");
+    const Pie = await import("plotly.js/lib/pie");
 
     const createPlotlyComponent = (await import("react-plotly.js/factory")).default;
 
-    Plotly.register([Scatter, Sunburst, Treemap]);
+    Plotly.register([Scatter, Sunburst, Treemap, Pie]);
     Plotly.register(jaLocale);
 
     return createPlotlyComponent(Plotly);
