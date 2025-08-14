@@ -50,7 +50,7 @@ export function PieChart({ clusters, onHover }: Props) {
     return result;
   };
   
-  const wrappedLabels = labels.map(label => wrapText(label));
+  const wrappedLabels = labels.map(label => wrapText(label, isMobile ? 15 : 25));
   
   const colors = [
     "#b3daa1",
