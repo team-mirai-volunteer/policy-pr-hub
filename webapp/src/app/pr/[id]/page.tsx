@@ -88,10 +88,10 @@ export default async function PRPage({ params }: PageProps) {
         <div className="flex items-center gap-4 text-sm text-secondary mb-4">
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
             basic_info.state === 'open' 
-              ? 'bg-green-100 text-green-800' 
+              ? 'green-card green-text' 
               : basic_info.state === 'closed'
               ? 'bg-red-100 text-red-800'
-              : 'bg-purple-100 text-purple-800'
+              : 'purple-card purple-text'
           }`}>
             {basic_info.state}
           </span>
@@ -169,11 +169,11 @@ export default async function PRPage({ params }: PageProps) {
           <h2 className="text-xl font-semibold text-primary mb-4">変更ファイル ({pr.files.length}件)</h2>
           <div className="space-y-2">
             {pr.files.slice(0, 10).map((file, index) => (
-              <div key={index} className="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
+              <div key={index} className="flex items-center justify-between py-2 border-b card-border last:border-b-0">
                 <span className="font-mono text-sm text-secondary">{file.filename}</span>
                 <div className="flex items-center gap-2 text-xs">
                   {file.additions > 0 && (
-                    <span className="text-green-600">+{file.additions}</span>
+                    <span className="green-text">+{file.additions}</span>
                   )}
                   {file.deletions > 0 && (
                     <span className="text-red-600">-{file.deletions}</span>
@@ -195,7 +195,7 @@ export default async function PRPage({ params }: PageProps) {
           href={basic_info.html_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center px-4 py-2 blue-card text-white rounded-md hover:opacity-80 transition-opacity"
         >
           GitHubで見る
         </a>
@@ -203,7 +203,7 @@ export default async function PRPage({ params }: PageProps) {
           href={basic_info.diff_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+          className="inline-flex items-center px-4 py-2 card text-primary rounded-md hover:opacity-80 transition-opacity"
         >
           差分を見る
         </a>

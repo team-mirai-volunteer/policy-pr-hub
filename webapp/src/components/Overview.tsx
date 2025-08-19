@@ -10,7 +10,7 @@ export function Overview({ result }: OverviewProps) {
       <h2 className="text-left text-xl mb-5">
         レポート
       </h2>
-      <h1 className="text-4xl mb-2 font-bold text-blue-600">
+      <h1 className="text-4xl mb-2 font-bold blue-text">
         {result.config.question}
       </h1>
       <div className="font-bold text-xl mb-2 flex items-center">
@@ -19,7 +19,7 @@ export function Overview({ result }: OverviewProps) {
         </svg>
         {result.arguments.length.toLocaleString()}件
       </div>
-      <p className="text-gray-700">{result.overview}</p>
+      <p className="text-secondary">{result.overview}</p>
     </div>
   );
 }

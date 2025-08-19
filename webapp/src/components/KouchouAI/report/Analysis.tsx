@@ -399,7 +399,7 @@ export function Analysis({ result }: ReportProps) {
             <DrawerTitle>{selectedData?.title}</DrawerTitle>
           </DrawerHeader>
           <DrawerBody fontSize={"xs"}>
-            <Box p={5} borderRadius={5} bgColor={"#111"} color={"#fff"} whiteSpace={"pre-wrap"} className={"code"}>
+            <Box p={5} borderRadius={5} className="code-bg" whiteSpace={"pre-wrap"}>
               {selectedData?.body}
             </Box>
           </DrawerBody>
