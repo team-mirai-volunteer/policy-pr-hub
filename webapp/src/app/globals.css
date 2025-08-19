@@ -55,7 +55,6 @@
   }
 }
 
-:root:has(body.chakra-ui-dark),
 body.chakra-ui-dark {
   --background: #0a0a0a;
   --foreground: #ededed;
