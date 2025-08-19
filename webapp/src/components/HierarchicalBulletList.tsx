@@ -66,15 +66,15 @@ function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10
   const displayArguments = showAll ? clusterArguments : clusterArguments.slice(0, maxDisplay)
 
   if (clusterArguments.length === 0) {
-    return <div className="text-gray-500 text-sm">個別データが見つかりません</div>
+    return <div className="text-muted text-sm">個別データが見つかりません</div>
   }
 
   return (
     <div className="mt-3 space-y-2">
-      <div className="text-sm font-medium text-gray-200">
+      <div className="text-sm font-medium text-primary">
         個別データ ({clusterArguments.length}件)
         {mappingsLoaded && mappingStats.total > 0 && (
-          <span className="ml-2 text-xs text-gray-400">
+          <span className="ml-2 text-xs text-muted">
             PRリンク: {mappingStats.matched}/{mappingStats.total} ({(mappingStats.matched/mappingStats.total*100).toFixed(1)}%)
           </span>
         )}
@@ -91,14 +91,14 @@ function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10
           return (
             <li key={arg.arg_id} className="mb-2 ml-4">
               {/* <div className="text-xs text-gray-500 mb-1">ID: {arg.arg_id}</div> */}
-              <div className="text-sm text-gray-200 flex items-start gap-2">
+              <div className="text-sm text-primary flex items-start gap-2">
                 <span className="flex-1">{arg.argument}</span>
                 {prNumber && prUrl && (
                   <a
                     href={prUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-400 hover:text-blue-300 underline text-xs whitespace-nowrap"
+                    className="blue-text hover:blue-text-light underline text-xs whitespace-nowrap"
                   >
                     #{prNumber}
                   </a>
@@ -111,7 +111,7 @@ function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10
       {clusterArguments.length > maxDisplay && (
         <button
           onClick={() => setShowAll(!showAll)}
-          className="text-xs text-blue-600 hover:text-blue-800 underline"
+          className="text-xs blue-text hover:blue-text-light underline"
         >
           {showAll ? '表示を減らす' : `さらに表示 (残り${clusterArguments.length - maxDisplay}件)`}
         </button>
@@ -213,7 +213,7 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
           {hasExpandableContent && (
             <button
               onClick={() => toggleExpanded(node.id)}
-              className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-blue-600 hover:text-blue-800 transition-colors"
+              className="flex-shrink-0 w-6 h-6 flex items-center justify-center blue-text hover:blue-text-light transition-colors"
               aria-label={node.isExpanded ? "折りたたむ" : "展開する"}
             >
               <svg
@@ -234,7 +234,7 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
           )}
           {!hasExpandableContent && (
             <div className="w-6 h-6 flex items-center justify-center">
-              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+              <div className="w-2 h-2 bg-muted rounded-full"></div>
             </div>
           )}
           <div className="flex-1">
@@ -246,7 +246,7 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
                   <div className="mt-2">
                     <button
                       onClick={() => toggleChildrenExpanded(node.id)}
-                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                      className="text-xs blue-text hover:blue-text-light underline"
                     >
                       {node.isChildrenExpanded ? '子要素を閉じる' : `子要素を表示 (${childCount}件)`}
                     </button>
@@ -256,7 +256,7 @@ export default function HierarchicalBulletList({ data }: HierarchicalBulletListP
                   <div className="mt-2">
                     <button
                       onClick={() => toggleChildrenExpanded(node.id)}
-                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                      className="text-xs blue-text hover:blue-text-light underline"
                     >
                       {node.isChildrenExpanded ? '個別データを閉じる' : `個別データを表示 (${node.arguments?.length || 0}件)`}
                     </button>

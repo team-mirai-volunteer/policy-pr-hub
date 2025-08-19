@@ -50,6 +50,9 @@
     --purple-bg: rgba(124, 45, 18, 0.2);
     --purple-text: #c4b5fd;
     --purple-text-light: #e9d5ff;
+    --orange-bg: rgba(251, 146, 60, 0.2);
+    --orange-text: #fb923c;
+    --orange-text-light: #ea580c;
     --code-bg: #374151;
     --code-text: #d1d5db;
   }
@@ -72,6 +75,9 @@
   --purple-bg: rgba(124, 45, 18, 0.2);
   --purple-text: #c4b5fd;
   --purple-text-light: #e9d5ff;
+  --orange-bg: rgba(251, 146, 60, 0.2);
+  --orange-text: #fb923c;
+  --orange-text-light: #ea580c;
   --code-bg: #374151;
   --code-text: #d1d5db;
 }
@@ -153,14 +159,10 @@ body {
   color: var(--orange-text-light);
 }
 
-.green-card {
-  background: var(--green-bg);
+.card-border {
+  border-color: var(--card-border);
 }
 
-.green-text {
-  color: var(--green-text);
-}
-
-.green-text-light {
-  color: var(--green-text-light);
+.bg-muted {
+  background: var(--text-muted);
 }

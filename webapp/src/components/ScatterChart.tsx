@@ -94,7 +94,7 @@ export default function ScatterChart({ data, onPointClick }: ScatterChartProps) 
         zerolinecolor: 'lightgray',
         zerolinewidth: 2
       },
-      plot_bgcolor: '#f8f9fa',
+      plot_bgcolor: 'var(--card-bg)',
       height: 600,
       font: { family: 'Arial, sans-serif' },
       shapes: [

@@ -96,14 +96,14 @@ const mockResult: Result = {
 
 export default function KouchouAIPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen card">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-bold text-primary mb-2">
               広聴AI - 実験的UI
             </h1>
-            <p className="text-gray-600">
+            <p className="text-secondary">
               kouchou-aiのクライアントビューを移植した実験的なユーザーインターフェースです。
             </p>
           </div>
@@ -113,18 +113,18 @@ export default function KouchouAIPage() {
           </div>
 
           <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <div className="border-t border-gray-200 my-12"></div>
+            <div className="border-t card-border my-12"></div>
             <div className="max-w-3xl mx-auto mb-6">
               <Reporter meta={mockMeta} />
             </div>
           </div>
 
-          <div className="text-center text-sm text-gray-500">
+          <div className="text-center text-sm text-muted">
             <p>
               このページは実験的な機能です。実際のデータ分析機能は今後追加予定です。
             </p>
             <p className="mt-2">
-              <Link href="/" className="text-blue-600 hover:underline">
+              <Link href="/" className="blue-text hover:underline">
                 ← ホームページに戻る
               </Link>
             </p>
