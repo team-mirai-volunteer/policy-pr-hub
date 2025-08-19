@@ -114,6 +114,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
   const [searchInput, setSearchInput] = useState('')
   const [searchResults, setSearchResults] = useState<string[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
   const [highlightedClusterId, setHighlightedClusterId] = useState<string | null>(null)
 
   const extractPRNumber = (url: string): number => {
@@ -244,10 +245,9 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
     if (!searchInput.trim()) return
     
     setIsSearching(true)
+    setHasSearched(true)
     try {
       const results = await findClustersContainingPR(searchInput.trim())
-      console.log('Search results:', results)
-      console.log('Available cluster IDs:', sortedClusters.map(c => c.id))
       setSearchResults(results)
     } catch (error) {
       console.error('Search failed:', error)
@@ -325,7 +325,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
             </div>
           )}
           
-          {searchInput.trim() && searchResults.length === 0 && !isSearching && (
+          {hasSearched && searchResults.length === 0 && !isSearching && (
             <div className="text-sm text-muted">
               PR番号 &quot;{searchInput}&quot; を含むクラスタが見つかりませんでした
             </div>
