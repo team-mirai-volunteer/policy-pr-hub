@@ -87,7 +87,7 @@ function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10
                     href={prUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-400 hover:text-blue-300 underline text-xs whitespace-nowrap"
+                    className="blue-text hover:blue-text-light underline text-xs whitespace-nowrap"
                   >
                     #{prNumber}
                   </a>
@@ -236,7 +236,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
                 onChange={(e) => setSortMethod(e.target.value as SortMethod)}
                 className="mr-2"
               />
-              <span className="text-sm">密度順</span>
+              <span className="text-sm text-primary">密度順</span>
             </label>
             <label className="flex items-center">
               <input
@@ -247,7 +247,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
                 onChange={(e) => setSortMethod(e.target.value as SortMethod)}
                 className="mr-2"
               />
-              <span className="text-sm">賛否比率順</span>
+              <span className="text-sm text-primary">賛否比率順</span>
             </label>
           </div>
         </div>
@@ -264,7 +264,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
         {sortedClusters.map((cluster, index) => (
           <div key={cluster.id} className="card rounded-lg p-4 hover:opacity-90 transition-opacity">
             <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-600">
+              <div className="flex-shrink-0 w-8 h-8 blue-card rounded-full flex items-center justify-center text-sm font-medium blue-text">
                 {index + 1}
               </div>
               

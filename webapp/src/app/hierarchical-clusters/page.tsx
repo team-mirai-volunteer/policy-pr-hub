@@ -75,13 +75,13 @@ export default function HierarchicalClustersPage() {
       <div className="mt-6 text-center">
         <Link
           href="/hierarchical"
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors mr-4"
+          className="inline-flex items-center px-4 py-2 blue-card text-white rounded-md hover:opacity-80 transition-opacity mr-4"
         >
           階層表示に戻る
         </Link>
         <Link
           href="/"
-          className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+          className="inline-flex items-center px-4 py-2 card text-primary rounded-md hover:opacity-80 transition-opacity"
         >
           ホームに戻る
         </Link>
