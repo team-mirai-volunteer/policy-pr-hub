@@ -322,7 +322,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
           
           {searchInput.trim() && searchResults.length === 0 && !isSearching && (
             <div className="text-sm text-muted">
-              PR番号 "{searchInput}" を含むクラスタが見つかりませんでした
+              PR番号 &quot;{searchInput}&quot; を含むクラスタが見つかりませんでした
             </div>
           )}
         </div>
