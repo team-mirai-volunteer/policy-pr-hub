@@ -60,15 +60,15 @@ function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10
   const displayArguments = showAll ? clusterArguments : clusterArguments.slice(0, maxDisplay)
 
   if (clusterArguments.length === 0) {
-    return <div className="text-gray-500 text-sm">個別データが見つかりません</div>
+    return <div className="text-muted text-sm">個別データが見つかりません</div>
   }
 
   return (
     <div className="mt-3 space-y-2">
-      <div className="text-sm font-medium text-gray-200">
+      <div className="text-sm font-medium text-primary">
         個別データ ({clusterArguments.length}件)
         {mappingsLoaded && mappingStats.total > 0 && (
-          <span className="ml-2 text-xs text-gray-400">
+          <span className="ml-2 text-xs text-muted">
             PRリンク: {mappingStats.matched}/{mappingStats.total} ({(mappingStats.matched/mappingStats.total*100).toFixed(1)}%)
           </span>
         )}
@@ -80,7 +80,7 @@ function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10
           
           return (
             <li key={arg.arg_id} className="mb-2 ml-4">
-              <div className="text-sm text-gray-200 flex items-start gap-2">
+              <div className="text-sm text-secondary flex items-start gap-2">
                 <span className="flex-1">{arg.argument}</span>
                 {prNumber && prUrl && (
                   <a
@@ -100,7 +100,7 @@ function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10
       {clusterArguments.length > maxDisplay && (
         <button
           onClick={() => setShowAll(!showAll)}
-          className="text-xs text-blue-600 hover:text-blue-800 underline"
+          className="text-xs blue-text hover:blue-text-light underline"
         >
           {showAll ? '表示を減らす' : `さらに表示 (残り${clusterArguments.length - maxDisplay}件)`}
         </button>
@@ -226,7 +226,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
         
         <div className="flex flex-wrap gap-4 mb-4">
           <div className="flex items-center space-x-4">
-            <span className="text-sm font-medium text-gray-700">ソート順序:</span>
+            <span className="text-sm font-medium text-secondary">ソート順序:</span>
             <label className="flex items-center">
               <input
                 type="radio"
@@ -252,7 +252,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
           </div>
         </div>
 
-        <div className="text-sm text-gray-600 mb-4">
+        <div className="text-sm text-muted mb-4">
           {sortMethod === 'density' 
             ? '密度ランクパーセンタイルの低い順（密度の高い順）で表示'
             : '賛否比率の高い順で表示（PR由来の賛成票数ベース）'
@@ -262,7 +262,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
 
       <div className="space-y-3">
         {sortedClusters.map((cluster, index) => (
-          <div key={cluster.id} className="border rounded-lg p-4 bg-white hover:bg-gray-50">
+          <div key={cluster.id} className="card rounded-lg p-4 hover:opacity-90 transition-opacity">
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-600">
                 {index + 1}
@@ -274,7 +274,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
                     <h3 className="font-semibold text-primary mb-2">{cluster.label}</h3>
                     <p className="text-secondary text-sm leading-relaxed mb-2">{cluster.takeaway}</p>
                     
-                    <div className="flex flex-wrap gap-4 text-xs text-gray-500 mb-2">
+                    <div className="flex flex-wrap gap-4 text-xs text-muted mb-2">
                       <span>引数数: {cluster.count || cluster.value || 0}件</span>
                       {cluster.densityRankPercentile !== undefined && (
                         <span>密度ランク: {(cluster.densityRankPercentile * 100).toFixed(1)}%</span>
@@ -291,7 +291,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
 
                 <button
                   onClick={() => toggleExpanded(cluster.id)}
-                  className="text-xs text-blue-600 hover:text-blue-800 underline"
+                  className="text-xs blue-text hover:blue-text-light underline"
                 >
                   {cluster.isExpanded ? '個別データを閉じる' : '個別データを表示'}
                 </button>
