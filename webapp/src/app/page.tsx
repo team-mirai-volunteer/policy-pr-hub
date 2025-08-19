@@ -31,6 +31,10 @@ export default function Home() {
               <div className="font-medium purple-text">階層クラスタリング</div>
               <div className="text-sm purple-text-light">階層的な分析結果を表示</div>
             </Link>
+            <Link href="/hierarchical-clusters" className="block p-4 orange-card rounded-lg hover:opacity-80 transition-opacity">
+              <div className="font-medium orange-text">子クラスタ一覧</div>
+              <div className="text-sm orange-text-light">密度・賛否比率順で表示</div>
+            </Link>
           </div>
         </div>
       </div>

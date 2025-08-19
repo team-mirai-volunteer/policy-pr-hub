@@ -31,6 +31,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Dark mode triggered by Chakra UI class or system preference */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -52,6 +53,27 @@
     --code-bg: #374151;
     --code-text: #d1d5db;
   }
+}
+
+:root:has(body.chakra-ui-dark) {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --card-bg: #1f2937;
+  --card-border: #374151;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-muted: #9ca3af;
+  --blue-bg: rgba(30, 64, 175, 0.2);
+  --blue-text: #93c5fd;
+  --blue-text-light: #dbeafe;
+  --green-bg: rgba(22, 101, 52, 0.2);
+  --green-text: #86efac;
+  --green-text-light: #dcfce7;
+  --purple-bg: rgba(124, 45, 18, 0.2);
+  --purple-text: #c4b5fd;
+  --purple-text-light: #e9d5ff;
+  --code-bg: #374151;
+  --code-text: #d1d5db;
 }
 
 body {

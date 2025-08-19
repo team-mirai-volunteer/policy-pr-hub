@@ -17,6 +17,7 @@ export interface HierarchicalCluster {
   value?: number;
   count?: number;
   arguments?: HierarchicalArgument[];
+  densityRankPercentile?: number;
 }
 
 export interface HierarchicalData {
