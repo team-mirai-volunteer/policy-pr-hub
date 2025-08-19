@@ -114,6 +114,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
   const [searchInput, setSearchInput] = useState('')
   const [searchResults, setSearchResults] = useState<string[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [highlightedClusterId, setHighlightedClusterId] = useState<string | null>(null)
 
   const extractPRNumber = (url: string): number => {
     const match = url.match(/\/pull\/(\d+)$/)
@@ -228,7 +229,9 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
         const extractedPRNumber = extractPRNumber(prUrl)
         if (extractedPRNumber === targetPRNumber) {
           arg.cluster_ids.forEach(clusterId => {
-            matchingClusterIds.add(clusterId)
+            if (clusterId.startsWith('2_')) {
+              matchingClusterIds.add(clusterId)
+            }
           })
         }
       }
@@ -257,7 +260,9 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
   const scrollToCluster = (clusterId: string) => {
     const clusterElement = document.querySelector(`[data-cluster-id="${clusterId}"]`)
     if (clusterElement) {
+      setHighlightedClusterId(clusterId)
       clusterElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setTimeout(() => setHighlightedClusterId(null), 3000)
     }
   }
 
@@ -368,7 +373,9 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
           <div 
             key={cluster.id} 
             data-cluster-id={cluster.id}
-            className="card rounded-lg p-4 hover:opacity-90 transition-opacity"
+            className={`card rounded-lg p-4 hover:opacity-90 transition-opacity ${
+              highlightedClusterId === cluster.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+            }`}
           >
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0 w-8 h-8 blue-card rounded-full flex items-center justify-center text-sm font-medium blue-text">
