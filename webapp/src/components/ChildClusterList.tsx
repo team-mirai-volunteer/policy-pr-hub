@@ -275,7 +275,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
                     <p className="text-secondary text-sm leading-relaxed mb-2">{cluster.takeaway}</p>
                     
                     <div className="flex flex-wrap gap-4 text-xs text-muted mb-2">
-                      <span>引数数: {cluster.count || cluster.value || 0}件</span>
+                      <span>意見数: {cluster.count || cluster.value || 0}件</span>
                       {cluster.densityRankPercentile !== undefined && (
                         <span>密度ランク: {(cluster.densityRankPercentile * 100).toFixed(1)}%</span>
                       )}
