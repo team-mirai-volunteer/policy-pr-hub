@@ -51,7 +51,7 @@ export default function HierarchicalClustersPage() {
         <h1 className="text-3xl font-bold text-primary mb-4">
           子クラスタ一覧
         </h1>
-        <p className="text-secondary">
+        <p className="text-primary">
           400の子クラスタを密度順または賛否比率順で表示します。
         </p>
       </div>
