@@ -13,6 +13,7 @@ interface ArgumentsDisplayProps {
   clusterId: string
   arguments: HierarchicalArgument[]
   maxDisplay?: number
+  extractPRNumber: (url: string) => number
 }
 
 interface EnhancedCluster extends HierarchicalCluster {
@@ -24,7 +25,7 @@ interface EnhancedCluster extends HierarchicalCluster {
 
 type SortMethod = 'density' | 'agreeRatio'
 
-function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10 }: ArgumentsDisplayProps) {
+function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10, extractPRNumber }: ArgumentsDisplayProps) {
   const [showAll, setShowAll] = useState(false)
   const [mappingsLoaded, setMappingsLoaded] = useState(false)
   const [mappingStats, setMappingStats] = useState({ total: 0, matched: 0 })
@@ -47,10 +48,6 @@ function ArgumentsDisplay({ clusterId, arguments: argumentsList, maxDisplay = 10
     }
   }, [mappingsLoaded, clusterId, argumentsList])
 
-  const extractPRNumber = (url: string): number => {
-    const match = url.match(/\/pull\/(\d+)$/)
-    return match ? parseInt(match[1]) : 0
-  }
 
   const clusterArguments = argumentsList.filter(arg => {
     const adjustedClusterId = clusterId.startsWith('2_') ? clusterId : `2_${clusterId.split('_')[1]}`
@@ -114,6 +111,14 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
   const [enhancedClusters, setEnhancedClusters] = useState<EnhancedCluster[]>([])
   const [mappingsLoaded, setMappingsLoaded] = useState(false)
   const [densityDataLoaded, setDensityDataLoaded] = useState(false)
+  const [searchInput, setSearchInput] = useState('')
+  const [searchResults, setSearchResults] = useState<string[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+
+  const extractPRNumber = (url: string): number => {
+    const match = url.match(/\/pull\/(\d+)$/)
+    return match ? parseInt(match[1]) : 0
+  }
 
   useEffect(() => {
     loadProblemMappings().then(() => {
@@ -209,6 +214,53 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
     )
   }
 
+  const findClustersContainingPR = async (prNumber: string): Promise<string[]> => {
+    if (!mappingsLoaded || !data.arguments) return []
+    
+    const targetPRNumber = parseInt(prNumber)
+    if (isNaN(targetPRNumber)) return []
+    
+    const matchingClusterIds = new Set<string>()
+    
+    data.arguments.forEach(arg => {
+      const prUrl = getPRUrlForArgument(arg.argument, arg.arg_id)
+      if (prUrl) {
+        const extractedPRNumber = extractPRNumber(prUrl)
+        if (extractedPRNumber === targetPRNumber) {
+          arg.cluster_ids.forEach(clusterId => {
+            matchingClusterIds.add(clusterId)
+          })
+        }
+      }
+    })
+    
+    return Array.from(matchingClusterIds)
+  }
+
+  const handleSearch = async () => {
+    if (!searchInput.trim()) return
+    
+    setIsSearching(true)
+    try {
+      const results = await findClustersContainingPR(searchInput.trim())
+      console.log('Search results:', results)
+      console.log('Available cluster IDs:', sortedClusters.map(c => c.id))
+      setSearchResults(results)
+    } catch (error) {
+      console.error('Search failed:', error)
+      setSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const scrollToCluster = (clusterId: string) => {
+    const clusterElement = document.querySelector(`[data-cluster-id="${clusterId}"]`)
+    if (clusterElement) {
+      clusterElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }
+
   if (enhancedClusters.length === 0) {
     return (
       <div className="text-center py-8">
@@ -223,6 +275,57 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
         <h2 className="text-2xl font-bold text-primary mb-4">
           子クラスタ一覧 ({sortedClusters.length}件)
         </h2>
+
+        <div className="mb-6 blue-card rounded-lg p-4">
+          <h3 className="text-lg font-semibold blue-text mb-3">PR番号検索</h3>
+          <div className="flex gap-3 items-center mb-3">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="PR番号を入力してください（例: 3721）"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <button
+              onClick={handleSearch}
+              disabled={isSearching || !searchInput.trim()}
+              className="px-4 py-2 blue-card text-blue-text rounded-md hover:opacity-80 transition-opacity disabled:opacity-50"
+            >
+              {isSearching ? '検索中...' : '検索'}
+            </button>
+          </div>
+          
+          {searchResults.length > 0 && (
+            <div>
+              <div className="text-sm blue-text mb-2">
+                検索結果: {searchResults.length}件のクラスタが見つかりました
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {searchResults.map((clusterId) => {
+                  const clusterIndex = sortedClusters.findIndex(c => c.id === clusterId)
+                  const clusterNumber = clusterIndex !== -1 ? clusterIndex + 1 : '?'
+                  return (
+                    <button
+                      key={clusterId}
+                      onClick={() => scrollToCluster(clusterId)}
+                      className="px-3 py-1 blue-card blue-text rounded-md hover:opacity-80 transition-opacity text-sm"
+                      title={`クラスタID: ${clusterId}`}
+                    >
+                      #{clusterNumber}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+          
+          {searchInput.trim() && searchResults.length === 0 && !isSearching && (
+            <div className="text-sm text-muted">
+              PR番号 "{searchInput}" を含むクラスタが見つかりませんでした
+            </div>
+          )}
+        </div>
         
         <div className="flex flex-wrap gap-4 mb-4">
           <div className="flex items-center space-x-4">
@@ -262,7 +365,11 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
 
       <div className="space-y-3">
         {sortedClusters.map((cluster, index) => (
-          <div key={cluster.id} className="card rounded-lg p-4 hover:opacity-90 transition-opacity">
+          <div 
+            key={cluster.id} 
+            data-cluster-id={cluster.id}
+            className="card rounded-lg p-4 hover:opacity-90 transition-opacity"
+          >
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0 w-8 h-8 blue-card rounded-full flex items-center justify-center text-sm font-medium blue-text">
                 {index + 1}
@@ -300,6 +407,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
                   <ArgumentsDisplay
                     clusterId={cluster.id}
                     arguments={data.arguments}
+                    extractPRNumber={extractPRNumber}
                   />
                 )}
               </div>
