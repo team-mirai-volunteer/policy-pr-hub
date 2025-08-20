@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
+import Link from 'next/link'
 import { HierarchicalData, HierarchicalArgument, HierarchicalCluster } from '@/types/hierarchical'
 import { loadProblemMappings, getPRUrlForArgument } from '@/lib/csvLoader'
 import { loadDensityData } from '@/lib/densityData'
@@ -20,7 +21,6 @@ interface EnhancedCluster extends HierarchicalCluster {
   densityRankPercentile?: number
   agreeRatio?: number
   uniquePRCount?: number
-  isExpanded: boolean
 }
 
 type SortMethod = 'density' | 'agreeRatio'
@@ -173,8 +173,7 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
         ...cluster,
         densityRankPercentile,
         agreeRatio,
-        uniquePRCount,
-        isExpanded: false
+        uniquePRCount
       }
     }
 
@@ -206,15 +205,6 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
     return sorted
   }, [enhancedClusters, sortMethod])
 
-  const toggleExpanded = (clusterId: string) => {
-    setEnhancedClusters(prev => 
-      prev.map(cluster => 
-        cluster.id === clusterId 
-          ? { ...cluster, isExpanded: !cluster.isExpanded }
-          : cluster
-      )
-    )
-  }
 
   const findClustersContainingPR = async (prNumber: string): Promise<string[]> => {
     if (!mappingsLoaded || !data.arguments) return []
@@ -403,20 +393,12 @@ export default function ChildClusterList({ data }: ChildClusterListProps) {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => toggleExpanded(cluster.id)}
+                <Link
+                  href={`/cluster/${encodeURIComponent(cluster.id)}`}
                   className="text-xs blue-text hover:blue-text-light underline"
                 >
-                  {cluster.isExpanded ? '個別データを閉じる' : '個別データを表示'}
-                </button>
-
-                {cluster.isExpanded && data.arguments && (
-                  <ArgumentsDisplay
-                    clusterId={cluster.id}
-                    arguments={data.arguments}
-                    extractPRNumber={extractPRNumber}
-                  />
-                )}
+                  個別データを表示
+                </Link>
               </div>
             </div>
           </div>
