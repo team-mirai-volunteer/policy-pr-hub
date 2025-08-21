@@ -29,7 +29,7 @@ export default function CommentCard({ comment, onUpdate }: CommentCardProps) {
 
   useEffect(() => {
     fetchCommentVotes()
-  }, [comment.id])
+  }, [comment.id, fetchCommentVotes])
 
 
   const handleVote = async (voteType: 'good' | 'bad') => {

@@ -27,7 +27,7 @@ export default function CommentsSection({ clusterId }: CommentsSectionProps) {
 
   useEffect(() => {
     fetchComments()
-  }, [clusterId])
+  }, [clusterId, fetchComments])
 
 
   const handleSubmitComment = async () => {

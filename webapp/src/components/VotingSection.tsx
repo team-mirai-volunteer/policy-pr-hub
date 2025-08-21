@@ -47,7 +47,7 @@ export default function VotingSection({ clusterId }: VotingSectionProps) {
     if (user && session) {
       fetchUserVote()
     }
-  }, [clusterId, user, session])
+  }, [clusterId, user, session, fetchVotingStats, fetchUserVote])
 
 
   const handleVote = async (voteType: 'agree' | 'disagree') => {
