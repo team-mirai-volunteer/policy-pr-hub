@@ -162,3 +162,9 @@ export type Config = {
         current_job_started: string; // 現在のジョブの開始時刻
       };
 };
+
+export type VoronoiPolygon = {
+  cluster_id: string;
+  coordinates: number[][][]; // Plotly polygon format
+  color: string;
+};

@@ -1,8 +1,10 @@
 // filepath: c:\Users\shinta\Documents\GitHub\kouchou-ai\client\components\charts\ScatterChart.tsx
-import type { Argument, Cluster, Config } from "@/type";
+import type { Argument, Cluster, Config, VoronoiPolygon } from "@/type";
 import { Box } from "@chakra-ui/react";
 import type { Annotations, Data, Layout } from "plotly.js";
 import { ChartCore } from "./ChartCore";
+import { loadVoronoiPolygons, polygonToPlotlyPath, checkVoronoiPolygonsAvailable } from "@/lib/voronoiPolygons";
+import { useEffect, useState } from "react";
 
 type Props = {
   clusterList: Cluster[];
@@ -26,6 +28,24 @@ export function ScatterChart({
   config,
   isFullScreen = false, // デフォルトは非全画面
 }: Props) {
+  const [voronoiPolygons, setVoronoiPolygons] = useState<VoronoiPolygon[]>([]);
+  const [polygonsAvailable, setPolygonsAvailable] = useState(false);
+  const [usePolygons, setUsePolygons] = useState(true);
+
+  useEffect(() => {
+    const loadPolygons = async () => {
+      const available = await checkVoronoiPolygonsAvailable();
+      setPolygonsAvailable(available);
+      
+      if (available && usePolygons) {
+        const polygons = await loadVoronoiPolygons();
+        setVoronoiPolygons(polygons);
+      }
+    };
+
+    loadPolygons();
+  }, [usePolygons]);
+
   // 全ての引数を表示するため、argumentListをそのまま使用
   // フィルター条件に合致しないものは後で灰色表示する
   const allArguments = argumentList;
@@ -644,8 +664,41 @@ export function ScatterChart({
     )
     : [];
 
+  const polygonShapes = usePolygons && voronoiPolygons.length > 0 
+    ? voronoiPolygons
+        .filter(polygon => {
+          const cluster = clusterList.find(c => c.id === polygon.cluster_id);
+          return cluster && cluster.level === targetLevel;
+        })
+        .map(polygon => ({
+          type: 'path' as const,
+          path: polygonToPlotlyPath(polygon.coordinates),
+          fillcolor: polygon.color + '80', // Add transparency
+          line: { color: polygon.color, width: 1 },
+          layer: 'below' as const,
+        }))
+    : [];
+
   return (
     <Box width="100%" height="100%" display="flex" flexDirection="column">
+      {polygonsAvailable && (
+        <Box position="absolute" top="10px" left="10px" zIndex={1000}>
+          <button
+            onClick={() => setUsePolygons(!usePolygons)}
+            style={{
+              padding: '4px 8px',
+              fontSize: '12px',
+              backgroundColor: usePolygons ? '#4CAF50' : '#f44336',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            {usePolygons ? 'ポリゴン表示' : '散布図表示'}
+          </button>
+        </Box>
+      )}
       <Box position="relative" flex="1">
         <ChartCore
           data={plotData as unknown as Data[]}
@@ -667,6 +720,7 @@ export function ScatterChart({
               hovermode: "closest",
               dragmode: "pan", // ドラッグによる移動（パン）を有効化
               annotations,
+              shapes: polygonShapes, // Add polygon shapes
               showlegend: false,
             } as Partial<Layout>
           }
