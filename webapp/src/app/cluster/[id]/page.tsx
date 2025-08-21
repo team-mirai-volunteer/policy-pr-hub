@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import { loadHierarchicalData } from '@/lib/hierarchicalData'
 import { HierarchicalData, HierarchicalCluster } from '@/types/hierarchical'
 import ArgumentsDisplayClient from './ArgumentsDisplayClient'
+import VotingSection from '@/components/VotingSection'
+import CommentsSection from '@/components/CommentsSection'
 
 export async function generateStaticParams() {
   try {
@@ -55,6 +57,10 @@ export default async function ClusterPage({ params }: PageProps) {
           <span>レベル: {cluster.level}</span>
         </div>
       </div>
+
+      <VotingSection clusterId={cluster.id} />
+
+      <CommentsSection clusterId={cluster.id} />
 
       <div className="card rounded-lg shadow-sm border p-6">
         <h2 className="text-xl font-semibold text-primary mb-4">個別データ</h2>
