@@ -70,6 +70,21 @@ npm run dev
 - コメントへの投票機能
 - 認証フロー（ログイン・ログアウト）
 
+## 現在のCI/CD状況
+
+### Vercelデプロイメント失敗について
+- **現在の状況**: Vercelデプロイメントが失敗しています
+- **原因**: Supabase環境変数（`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`）がVercel環境で設定されていないため
+- **ローカルビルド**: 正常に動作します（モッククライアントを使用）
+- **解決方法**: Supabase環境を作成後、Vercelの環境変数設定でSupabase認証情報を追加する必要があります
+
+### 対応が必要な作業
+1. Supabase環境の作成（上記の手順に従って）
+2. Vercelプロジェクト設定で環境変数を追加:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. Vercelでの再デプロイメント実行
+
 ## 注意事項
 
 - 既存のSupabase環境は使用しないこと
