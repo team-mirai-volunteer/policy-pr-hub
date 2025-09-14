@@ -166,3 +166,33 @@ body {
 .bg-muted {
   background: var(--text-muted);
 }
+
+/* Force light mode for kouchou-ai pages */
+.kouchou-ai-light-mode {
+  --background: #ffffff !important;
+  --foreground: #171717 !important;
+  --card-bg: #ffffff !important;
+  --card-border: #e5e7eb !important;
+  --text-primary: #111827 !important;
+  --text-secondary: #6b7280 !important;
+  --text-muted: #9ca3af !important;
+  --blue-bg: #eff6ff !important;
+  --blue-text: #1e40af !important;
+  --blue-text-light: #3b82f6 !important;
+  --green-bg: #f0fdf4 !important;
+  --green-text: #166534 !important;
+  --green-text-light: #16a34a !important;
+  --purple-bg: #faf5ff !important;
+  --purple-text: #7c2d12 !important;
+  --purple-text-light: #a855f7 !important;
+  --orange-bg: #fff7ed !important;
+  --orange-text: #ea580c !important;
+  --orange-text-light: #fb923c !important;
+  --code-bg: #f3f4f6 !important;
+  --code-text: #374151 !important;
+}
+
+.kouchou-ai-light-mode body {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+}
