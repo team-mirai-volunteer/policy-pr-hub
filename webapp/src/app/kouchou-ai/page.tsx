@@ -75,7 +75,7 @@ export default function Page() {
 
   return (
     <>
-      <div className="container">
+      <div className="container kouchou-ai-light-mode">
         <Header />
         <Overview result={result} />
         <ClientContainer result={result} />
