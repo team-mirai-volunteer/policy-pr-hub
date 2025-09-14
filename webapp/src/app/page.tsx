@@ -18,11 +18,7 @@ export default function Home() {
           <p className="text-secondary">
             URLに <code className="code-bg px-2 py-1 rounded">/pr/[番号]</code> を追加してPRの詳細を表示できます。
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-            <a href="https://kouchou-ai.team-mir.ai/ee61bb2f-9690-4bd2-9737-1b9cc427ff97/" target="_blank" rel="noopener noreferrer" className="block p-4 blue-card rounded-lg hover:opacity-80 transition-opacity">
-              <div className="font-medium blue-text">広聴AI分析</div>
-              <div className="text-sm blue-text-light">高度な分析結果を確認</div>
-            </a>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
             <Link href="/kouchou-ai" className="block p-4 green-card rounded-lg hover:opacity-80 transition-opacity">
               <div className="font-medium green-text">広聴AI (実験版)</div>
               <div className="text-sm green-text-light">カスタマイズされたUI</div>
