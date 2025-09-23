@@ -88,7 +88,7 @@ export function ClusterSelector({
         <NativeSelectRoot>
           <NativeSelectField
             value={selectedClusterIds[0] || "all"}
-            onChange={(e) => handleSingleSelect(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSingleSelect(e.target.value)}
             items={[
               { value: "all", label: "全てのクラスター" },
               ...clusters.map(cluster => ({

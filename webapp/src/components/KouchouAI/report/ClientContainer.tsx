@@ -248,12 +248,12 @@ export function ClientContainer({ result }: Props) {
     if (selectedChart === "scatterDensity") {
       const max = Math.max(...filteredResult.clusters.map((c) => c.level));
       c = filteredResult.clusters.filter((c) => c.level === max);
+      
+      if (selectedClusterIds.length > 0) {
+        c = c.filter(cluster => selectedClusterIds.includes(cluster.id));
+      }
     } else {
       c = result.clusters.filter((c) => c.level === 1);
-    }
-    
-    if (selectedClusterIds.length > 0) {
-      c = c.filter(cluster => selectedClusterIds.includes(cluster.id));
     }
     
     return c.sort((a, b) => b.value - a.value);
@@ -337,20 +337,18 @@ export function ClientContainer({ result }: Props) {
           return allFilteredAttributes.size + (textSearch.trim() !== "" ? 1 : 0);
         })()}
       />
-      <ClusterSelector
-        clusters={result.clusters.filter((c) => {
-          if (selectedChart === "scatterDensity") {
+      {selectedChart === "scatterDensity" && (
+        <ClusterSelector
+          clusters={result.clusters.filter((c) => {
             const max = Math.max(...filteredResult.clusters.map((c) => c.level));
             return filteredResult.clusters.filter((c) => c.level === max).map(c => c.id).includes(c.id);
-          } else {
-            return c.level === 1;
-          }
-        })}
-        selectedClusterIds={selectedClusterIds}
-        onSelectionChange={handleClusterSelectionChange}
-        multiSelectMode={multiSelectMode}
-        onToggleMultiSelect={handleToggleMultiSelect}
-      />
+          })}
+          selectedClusterIds={selectedClusterIds}
+          onSelectionChange={handleClusterSelectionChange}
+          multiSelectMode={multiSelectMode}
+          onToggleMultiSelect={handleToggleMultiSelect}
+        />
+      )}
       <Chart
         result={filteredResult}
         selectedChart={selectedChart}
