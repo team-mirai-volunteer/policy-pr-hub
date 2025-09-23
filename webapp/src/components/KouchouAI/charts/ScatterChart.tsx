@@ -10,6 +10,7 @@ type Props = {
   targetLevel: number;
   onHover?: () => void;
   showClusterLabels?: boolean;
+  selectedClusterIds?: string[];
   // フィルター適用後の引数IDのリストを受け取り、フィルターに該当しないポイントの表示を変更する
   filteredArgumentIds?: string[];
   config?: Config; // ソースリンク機能の有効/無効を制御するため
@@ -22,6 +23,7 @@ export function ScatterChart({
   targetLevel,
   onHover,
   showClusterLabels,
+  selectedClusterIds,
   filteredArgumentIds, // フィルター済みIDリスト（フィルター条件に合致する引数のID）
   config,
   isFullScreen = false, // デフォルトは非全画面
@@ -639,9 +641,13 @@ export function ScatterChart({
 
   // === メインのアノテーション生成 ===
   const annotations: Partial<Annotations>[] = showClusterLabels
-    ? calcLabelPositionsConstrained().map(({ dataSet, labelX, labelY, side }) =>
-      createSingleAnnotation(dataSet, labelX, labelY, side, true) // 常に引き出し線を表示
-    )
+    ? calcLabelPositionsConstrained()
+        .filter(({ dataSet }) => {
+          return !selectedClusterIds || selectedClusterIds.length === 0 || selectedClusterIds.includes(dataSet.cluster.id);
+        })
+        .map(({ dataSet, labelX, labelY, side }) =>
+          createSingleAnnotation(dataSet, labelX, labelY, side, true) // 常に引き出し線を表示
+        )
     : [];
 
   return (
