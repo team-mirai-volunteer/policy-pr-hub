@@ -24,11 +24,7 @@ export function ClusterSelector({
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSingleSelect = (clusterId: string) => {
-    if (clusterId === "all") {
-      onSelectionChange([]);
-    } else {
-      onSelectionChange([clusterId]);
-    }
+    onSelectionChange([clusterId]);
   };
 
   const handleMultiSelect = (clusterId: string, checked: boolean) => {
@@ -43,9 +39,7 @@ export function ClusterSelector({
   };
 
   const selectedClusters = clusters.filter(c => selectedClusterIds.includes(c.id));
-  const displayText = selectedClusterIds.length === 0 
-    ? "全てのクラスター" 
-    : selectedClusterIds.length === 1
+  const displayText = selectedClusterIds.length === 1
     ? selectedClusters[0]?.label || "クラスター選択"
     : `${selectedClusterIds.length}個のクラスター選択`;
 
@@ -87,15 +81,12 @@ export function ClusterSelector({
       ) : (
         <NativeSelectRoot>
           <NativeSelectField
-            value={selectedClusterIds[0] || "all"}
+            value={selectedClusterIds[0] || (clusters.length > 0 ? clusters[0].id : "")}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSingleSelect(e.target.value)}
-            items={[
-              { value: "all", label: "全てのクラスター" },
-              ...clusters.map(cluster => ({
-                value: cluster.id,
-                label: `${cluster.label} (${cluster.value}件)`
-              }))
-            ]}
+            items={clusters.map(cluster => ({
+              value: cluster.id,
+              label: `${cluster.label} (${cluster.value}件)`
+            }))}
           />
         </NativeSelectRoot>
       )}

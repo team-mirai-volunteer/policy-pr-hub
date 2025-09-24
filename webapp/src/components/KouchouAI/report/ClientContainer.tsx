@@ -247,10 +247,12 @@ export function ClientContainer({ result }: Props) {
     let c: Cluster[] = [];
     if (selectedChart === "scatterDensity") {
       const max = Math.max(...filteredResult.clusters.map((c) => c.level));
-      c = filteredResult.clusters.filter((c) => c.level === max);
+      const availableClusters = filteredResult.clusters.filter((c) => c.level === max);
       
       if (selectedClusterIds.length > 0) {
-        c = c.filter(cluster => selectedClusterIds.includes(cluster.id));
+        c = availableClusters.filter(cluster => selectedClusterIds.includes(cluster.id));
+      } else {
+        c = availableClusters.length > 0 ? [availableClusters[0]] : [];
       }
     } else {
       c = result.clusters.filter((c) => c.level === 1);
@@ -265,12 +267,25 @@ export function ClientContainer({ result }: Props) {
   const handleCloseAttributeFilter = () => setOpenAttributeFilter(false);
   const handleChartChange = (selectedChart: string) => {
     setSelectedChart(selectedChart);
-    if (selectedChart === "scatterAll") updateFilteredResult(1, 0, attributeFilters, textSearch);
+    if (selectedChart === "scatterAll") {
+      updateFilteredResult(1, 0, attributeFilters, textSearch);
+      setSelectedClusterIds([]);
+    }
     if (selectedChart === "treemap") {
       // 属性フィルターをリセットせずに維持
       updateFilteredResult(1, 0, attributeFilters, textSearch);
+      setSelectedClusterIds([]);
     }
-    if (selectedChart === "scatterDensity") updateFilteredResult(maxDensity, minValue, attributeFilters, textSearch);
+    if (selectedChart === "scatterDensity") {
+      updateFilteredResult(maxDensity, minValue, attributeFilters, textSearch);
+      if (selectedClusterIds.length === 0) {
+        const max = Math.max(...filteredResult.clusters.map((c) => c.level));
+        const availableClusters = filteredResult.clusters.filter((c) => c.level === max);
+        if (availableClusters.length > 0) {
+          setSelectedClusterIds([availableClusters[0].id]);
+        }
+      }
+    }
   };
   const handleClickDensitySetting = () => setOpenDensityFilterSetting(true);
   const handleClickFullscreen = () => setIsFullscreen(true);
