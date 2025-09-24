@@ -14,6 +14,7 @@ type Props = {
   filteredArgumentIds?: string[];
   config?: Config; // ソースリンク機能の有効/無効を制御するため
   isFullScreen?: boolean; // 全体画面表示かどうかの制御フラグ
+  selectedClusterIds?: string[]; // 選択されたクラスターIDのリスト
 };
 
 export function ScatterChart({
@@ -25,6 +26,7 @@ export function ScatterChart({
   filteredArgumentIds, // フィルター済みIDリスト（フィルター条件に合致する引数のID）
   config,
   isFullScreen = false, // デフォルトは非全画面
+  selectedClusterIds,
 }: Props) {
   // 全ての引数を表示するため、argumentListをそのまま使用
   // フィルター条件に合致しないものは後で灰色表示する
@@ -36,7 +38,11 @@ export function ScatterChart({
     return m;
   }, {} as Record<string, Argument[]>);
 
-  const targetClusters = clusterList.filter((cluster) => cluster.level === targetLevel);
+  const targetClusters = clusterList.filter((cluster) => {
+    const isTargetLevel = cluster.level === targetLevel;
+    const isSelected = !selectedClusterIds || selectedClusterIds.length === 0 || selectedClusterIds.includes(cluster.id);
+    return isTargetLevel && isSelected;
+  });
   const softColors = [
     "#7ac943",
     "#3fa9f5",
@@ -456,7 +462,9 @@ export function ScatterChart({
    */
   function getValidClustersForLabels() {
     return clusterDataSets.filter(dataSet => {
-      return !dataSet.cluster.densityFiltered;
+      const isNotDensityFiltered = !dataSet.cluster.densityFiltered;
+      const isSelected = !selectedClusterIds || selectedClusterIds.length === 0 || selectedClusterIds.includes(dataSet.cluster.id);
+      return isNotDensityFiltered && isSelected;
     });
   }
 

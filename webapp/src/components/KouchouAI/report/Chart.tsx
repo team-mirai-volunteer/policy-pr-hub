@@ -15,6 +15,7 @@ type ReportProps = {
   onToggleClusterLabels: (show: boolean) => void;
   treemapLevel: string;
   onTreeZoom: (level: string) => void;
+  selectedClusterIds?: string[];
 };
 
 type FilterState = {
@@ -34,6 +35,7 @@ export function Chart({
   onToggleClusterLabels,
   treemapLevel,
   onTreeZoom,
+  selectedClusterIds,
   filterState, // 追加: フィルター状態
 }: ReportProps & { filterState?: FilterState }) {
   // フィルター済み引数IDリストを計算
@@ -125,6 +127,7 @@ export function Chart({
                 showClusterLabels={showClusterLabels}
                 filteredArgumentIds={filteredArgumentIds}
                 config={result.config}
+                selectedClusterIds={selectedClusterIds}
               />
             )}
             {selectedChart === "treemap" && (
@@ -165,6 +168,7 @@ export function Chart({
             showClusterLabels={showClusterLabels}
             filteredArgumentIds={filteredArgumentIds}
             config={result.config}
+            selectedClusterIds={selectedClusterIds}
           />
         )}
       </Box>

@@ -9,6 +9,8 @@ import type { Cluster, Result } from "@/type";
 import { useEffect, useMemo, useState } from "react";
 import type { AttributeMeta } from "./AttributeFilterDialog";
 import { type NumericRangeFilters, filterSamples } from "./attributeFilterUtils";
+import { ClusterBreadcrumb } from "./ClusterBreadcrumb";
+import { ClusterSelector } from "@/components/KouchouAI/ui/ClusterSelector";
 
 type Props = {
   result: Result;
@@ -26,6 +28,7 @@ export function ClientContainer({ result }: Props) {
   const [showClusterLabels, setShowClusterLabels] = useState(true);
   const [treemapLevel, setTreemapLevel] = useState("0");
   const [mounted, setMounted] = useState(false);
+  const [selectedClusterIds, setSelectedClusterIds] = useState<string[]>([]);
 
   // --- 標本データ生成 ---
   const samples = useMemo(() => {
@@ -338,7 +341,16 @@ export function ClientContainer({ result }: Props) {
           includeEmptyValues,
           textSearch,
         }}
+        selectedClusterIds={selectedClusterIds}
       />
+      {(selectedChart === "scatterAll" || selectedChart === "scatterDensity") && (
+        <ClusterSelector
+          clusters={result.clusters}
+          selectedClusterIds={selectedClusterIds}
+          onSelectionChange={setSelectedClusterIds}
+          targetLevel={selectedChart === "scatterAll" ? 1 : Math.max(...result.clusters.map((c) => c.level))}
+        />
+      )}
       {clustersToDisplay.map((c) => (
         <ClusterOverview key={c.id} cluster={c} />
       ))}
