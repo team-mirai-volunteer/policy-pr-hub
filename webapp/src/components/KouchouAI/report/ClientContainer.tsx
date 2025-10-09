@@ -124,6 +124,18 @@ export function ClientContainer({ result }: Props) {
     setMounted(true);
   }, []);
 
+  // --- 濃い意見タブでの初期クラスター選択 ---
+  useEffect(() => {
+    if (selectedChart === "scatterDensity" && selectedClusterIds.length === 0) {
+      const max = Math.max(...filteredResult.clusters.map((c) => c.level));
+      // densityFiltered が false のクラスターのみを対象にする
+      const availableClusters = filteredResult.clusters.filter((c) => c.level === max && !c.densityFiltered);
+      if (availableClusters.length > 0) {
+        setSelectedClusterIds([availableClusters[0].id]);
+      }
+    }
+  }, [filteredResult, selectedChart, selectedClusterIds.length]);
+
   // --- 属性・密度フィルタ適用 ---
   function updateFilteredResult(
     maxDensity: number,
@@ -278,13 +290,8 @@ export function ClientContainer({ result }: Props) {
     }
     if (selectedChart === "scatterDensity") {
       updateFilteredResult(maxDensity, minValue, attributeFilters, textSearch);
-      if (selectedClusterIds.length === 0) {
-        const max = Math.max(...filteredResult.clusters.map((c) => c.level));
-        const availableClusters = filteredResult.clusters.filter((c) => c.level === max);
-        if (availableClusters.length > 0) {
-          setSelectedClusterIds([availableClusters[0].id]);
-        }
-      }
+      // 初期選択は useEffect で行うため、ここではリセットのみ
+      setSelectedClusterIds([]);
     }
   };
   const handleClickDensitySetting = () => setOpenDensityFilterSetting(true);
@@ -354,7 +361,7 @@ export function ClientContainer({ result }: Props) {
       />
       {(selectedChart === "scatterAll" || selectedChart === "scatterDensity") && (
         <ClusterSelector
-          clusters={result.clusters}
+          clusters={selectedChart === "scatterDensity" ? filteredResult.clusters : result.clusters}
           selectedClusterIds={selectedClusterIds}
           onSelectionChange={handleClusterSelectionChange}
           targetLevel={selectedChart === "scatterAll" ? 1 : Math.max(...result.clusters.map((c) => c.level))}

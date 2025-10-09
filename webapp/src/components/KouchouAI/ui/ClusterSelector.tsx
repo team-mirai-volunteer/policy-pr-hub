@@ -24,11 +24,15 @@ export function ClusterSelector({
   onToggleMultiSelect,
 }: Props) {
   // targetLevelが指定されている場合は、そのレベルのクラスターのみをフィルタリング
+  // また、densityFilteredのクラスターは除外
   const filteredClusters = useMemo(() => {
+    let result = clusters;
     if (targetLevel !== undefined) {
-      return clusters.filter(cluster => cluster.level === targetLevel);
+      result = result.filter(cluster => cluster.level === targetLevel);
     }
-    return clusters;
+    // densityFilteredのクラスターを除外
+    result = result.filter(cluster => !cluster.densityFiltered);
+    return result;
   }, [clusters, targetLevel]);
 
   const handleSingleSelect = (clusterId: string) => {

@@ -482,13 +482,20 @@ export function ScatterChart({
     const valid = getValidClustersForLabels();
     if (!valid.length) return [];
 
+    // 選択されたクラスターがある場合は、それらのみを対象にする
+    const targetForLabels = selectedClusterIds && selectedClusterIds.length > 0
+      ? valid.filter(ds => selectedClusterIds.includes(ds.cluster.id))
+      : valid;
+
+    if (!targetForLabels.length) return [];
+
     const b = calculateDataBounds();
     const midX = (b.minX + b.maxX) / 2;
     const midY = (b.minY + b.maxY) / 2;
     const dx = (b.maxX - b.minX) * 0.06; // ラベルを外側へ
     const dy = (b.maxY - b.minY) * 0.06;
 
-    const withCenter = valid.map(ds => {
+    const withCenter = targetForLabels.map(ds => {
       const a = getClusterAnchor(ds.cluster.id);
       return { ...ds, centerX: a.x || ds.centerX, centerY: a.y || ds.centerY };
     });
@@ -652,9 +659,6 @@ export function ScatterChart({
   // === メインのアノテーション生成 ===
   const annotations: Partial<Annotations>[] = showClusterLabels
     ? calcLabelPositionsConstrained()
-        .filter(({ dataSet }) => {
-          return !selectedClusterIds || selectedClusterIds.length === 0 || selectedClusterIds.includes(dataSet.cluster.id);
-        })
         .map(({ dataSet, labelX, labelY, side }) =>
           createSingleAnnotation(dataSet, labelX, labelY, side, true) // 常に引き出し線を表示
         )
