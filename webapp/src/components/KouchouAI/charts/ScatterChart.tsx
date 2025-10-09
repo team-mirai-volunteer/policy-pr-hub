@@ -38,10 +38,9 @@ export function ScatterChart({
     return m;
   }, {} as Record<string, Argument[]>);
 
+  // 対象レベルのクラスターを全て取得（選択されていないものも含む）
   const targetClusters = clusterList.filter((cluster) => {
-    const isTargetLevel = cluster.level === targetLevel;
-    const isSelected = !selectedClusterIds || selectedClusterIds.length === 0 || selectedClusterIds.includes(cluster.id);
-    return isTargetLevel && isSelected;
+    return cluster.level === targetLevel;
   });
   const softColors = [
     "#7ac943",
@@ -86,6 +85,7 @@ export function ScatterChart({
     "#fcbf49",
   ];
 
+  // 全てのクラスターに色を割り当て（選択状態に関わらず同じ色を維持）
   const clusterColorMap = targetClusters.reduce(
     (acc, cluster, index) => {
       acc[cluster.id] = softColors[index % softColors.length];
@@ -304,37 +304,41 @@ export function ScatterChart({
 
     const dataToAdd = [];
 
-    // フィルター対象外のデータ（背面に描画）
-    if (dataSet.notMatchingData) {
-      dataToAdd.push(dataSet.notMatchingData);
-    }
+    // フィルターがある場合は、matching/notMatchingDataを使用
+    if (filteredArgumentIds) {
+      // フィルター対象外のデータ（背面に描画）
+      if (dataSet.notMatchingData) {
+        dataToAdd.push(dataSet.notMatchingData);
+      }
 
-    // フィルター対象のデータ（前面に描画）
-    if (dataSet.matchingData) {
-      dataToAdd.push(dataSet.matchingData);
-    }
-
-    // フィルターがない場合の通常表示
-    if (!filteredArgumentIds) {
+      // フィルター対象のデータ（前面に描画）
+      if (dataSet.matchingData) {
+        dataToAdd.push(dataSet.matchingData);
+      }
+    } else {
+      // フィルターがない場合の通常表示
       const clusterArguments = allArguments.filter((arg) => arg.cluster_ids.includes(dataSet.cluster.id));
       if (clusterArguments.length > 0) {
+        // クラスターが選択されているかチェック
+        const isClusterSelected = !selectedClusterIds || selectedClusterIds.length === 0 || selectedClusterIds.includes(dataSet.cluster.id);
+
         dataToAdd.push({
           x: clusterArguments.map((arg) => arg.x),
           y: clusterArguments.map((arg) => arg.y),
           mode: "markers",
           marker: {
-            size: isDensityFiltered ? 2 : 7, // 密度フィルターされたクラスターは小さく
-            color: isDensityFiltered ? "#999999" : clusterColorMap[dataSet.cluster.id], // 密度フィルターされたクラスターは濃い灰色で不透明
-            opacity: isDensityFiltered ? 1 : 1, // 密度フィルターされたクラスターも不透明
+            size: isDensityFiltered ? 2 : (isClusterSelected ? 7 : 3), // 選択されていないクラスターは小さく
+            color: isDensityFiltered ? "#999999" : (isClusterSelected ? clusterColorMap[dataSet.cluster.id] : "#999999"), // 選択されていないクラスターは灰色
+            opacity: isDensityFiltered ? 1 : (isClusterSelected ? 1 : 0.5), // 選択されていないクラスターは半透明
           },
-          text: isDensityFiltered ?
-            Array(clusterArguments.length).fill("") : // 密度フィルターされたクラスターはホバーテキストなし
+          text: (isDensityFiltered || !isClusterSelected) ?
+            Array(clusterArguments.length).fill("") : // 密度フィルターされたクラスターまたは選択されていないクラスターはホバーテキストなし
             clusterArguments.map(
               (arg) => `<b>${dataSet.cluster.label}</b><br>${arg.argument.replace(/(.{30})/g, "$1<br />")}`,
             ),
           type: "scattergl",
-          hoverinfo: isDensityFiltered ? "skip" : "text", // 密度フィルターされたクラスターはホバーなし
-          hoverlabel: isDensityFiltered ? undefined : {
+          hoverinfo: (isDensityFiltered || !isClusterSelected) ? "skip" : "text", // 密度フィルターされたクラスターまたは選択されていないクラスターはホバーなし
+          hoverlabel: (isDensityFiltered || !isClusterSelected) ? undefined : {
             align: "left" as const,
             bgcolor: "white",
             bordercolor: clusterColorMap[dataSet.cluster.id],
