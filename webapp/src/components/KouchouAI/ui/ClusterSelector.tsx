@@ -57,8 +57,8 @@ export function ClusterSelector({
         <HStack mb={2}>
           <Text fontSize="sm" fontWeight="medium">クラスター表示:</Text>
           <Checkbox
-            checked={multiSelectMode}
-            onCheckedChange={(checked) => onToggleMultiSelect(!!checked.checked)}
+            isChecked={multiSelectMode}
+            onChange={(e) => onToggleMultiSelect(e.target.checked)}
             size="sm"
           >
             複数選択
@@ -67,9 +67,9 @@ export function ClusterSelector({
 
         <Box border="1px solid" borderColor="gray.300" borderRadius="md" p={2} maxH="200px" overflowY="auto">
           <Checkbox
-            checked={selectedClusterIds.length === filteredClusters.length && filteredClusters.length > 0}
-            indeterminate={selectedClusterIds.length > 0 && selectedClusterIds.length < filteredClusters.length}
-            onCheckedChange={(checked) => handleMultiSelect("all", !!checked.checked)}
+            isChecked={selectedClusterIds.length === filteredClusters.length && filteredClusters.length > 0}
+            isIndeterminate={selectedClusterIds.length > 0 && selectedClusterIds.length < filteredClusters.length}
+            onChange={(e) => handleMultiSelect("all", e.target.checked)}
             mb={2}
           >
             全て選択
@@ -77,8 +77,8 @@ export function ClusterSelector({
           {filteredClusters.map((cluster) => (
             <Checkbox
               key={cluster.id}
-              checked={selectedClusterIds.includes(cluster.id)}
-              onCheckedChange={(checked) => handleMultiSelect(cluster.id, !!checked.checked)}
+              isChecked={selectedClusterIds.includes(cluster.id)}
+              onChange={(e) => handleMultiSelect(cluster.id, e.target.checked)}
               display="block"
               mb={1}
             >
@@ -99,8 +99,8 @@ export function ClusterSelector({
         <HStack mb={2}>
           <Text fontSize="sm" fontWeight="medium">クラスター表示:</Text>
           <Checkbox
-            checked={false}
-            onCheckedChange={(checked) => onToggleMultiSelect(!!checked.checked)}
+            isChecked={false}
+            onChange={(e) => onToggleMultiSelect(e.target.checked)}
             size="sm"
           >
             複数選択
