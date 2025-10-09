@@ -352,16 +352,14 @@ export function ClientContainer({ result }: Props) {
           return allFilteredAttributes.size + (textSearch.trim() !== "" ? 1 : 0);
         })()}
       />
-      {selectedChart === "scatterDensity" && (
+      {(selectedChart === "scatterAll" || selectedChart === "scatterDensity") && (
         <ClusterSelector
-          clusters={result.clusters.filter((c) => {
-            const max = Math.max(...filteredResult.clusters.map((c) => c.level));
-            return filteredResult.clusters.filter((c) => c.level === max).map(c => c.id).includes(c.id);
-          })}
+          clusters={result.clusters}
           selectedClusterIds={selectedClusterIds}
           onSelectionChange={handleClusterSelectionChange}
-          multiSelectMode={multiSelectMode}
-          onToggleMultiSelect={handleToggleMultiSelect}
+          targetLevel={selectedChart === "scatterAll" ? 1 : Math.max(...result.clusters.map((c) => c.level))}
+          multiSelectMode={selectedChart === "scatterDensity" ? multiSelectMode : undefined}
+          onToggleMultiSelect={selectedChart === "scatterDensity" ? handleToggleMultiSelect : undefined}
         />
       )}
       <Chart

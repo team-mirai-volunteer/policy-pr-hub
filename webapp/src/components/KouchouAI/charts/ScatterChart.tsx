@@ -10,7 +10,7 @@ type Props = {
   targetLevel: number;
   onHover?: () => void;
   showClusterLabels?: boolean;
-  selectedClusterIds?: string[];
+  selectedClusterIds?: string[]; // 選択されたクラスターIDのリスト
   // フィルター適用後の引数IDのリストを受け取り、フィルターに該当しないポイントの表示を変更する
   filteredArgumentIds?: string[];
   config?: Config; // ソースリンク機能の有効/無効を制御するため
@@ -38,7 +38,11 @@ export function ScatterChart({
     return m;
   }, {} as Record<string, Argument[]>);
 
-  const targetClusters = clusterList.filter((cluster) => cluster.level === targetLevel);
+  const targetClusters = clusterList.filter((cluster) => {
+    const isTargetLevel = cluster.level === targetLevel;
+    const isSelected = !selectedClusterIds || selectedClusterIds.length === 0 || selectedClusterIds.includes(cluster.id);
+    return isTargetLevel && isSelected;
+  });
   const softColors = [
     "#7ac943",
     "#3fa9f5",
@@ -458,7 +462,9 @@ export function ScatterChart({
    */
   function getValidClustersForLabels() {
     return clusterDataSets.filter(dataSet => {
-      return !dataSet.cluster.densityFiltered;
+      const isNotDensityFiltered = !dataSet.cluster.densityFiltered;
+      const isSelected = !selectedClusterIds || selectedClusterIds.length === 0 || selectedClusterIds.includes(dataSet.cluster.id);
+      return isNotDensityFiltered && isSelected;
     });
   }
 
