@@ -5,6 +5,7 @@ import { AttributeFilterDialog, type AttributeFilters } from "@/components/Kouch
 import { Chart } from "@/components/KouchouAI/report/Chart";
 import { ClusterOverview } from "@/components/KouchouAI/report/ClusterOverview";
 import { DisplaySettingDialog } from "@/components/KouchouAI/report/DisplaySettingDialog";
+import { ClusterSelector } from "@/components/KouchouAI/ui/ClusterSelector";
 import type { Cluster, Result } from "@/type";
 import { useEffect, useMemo, useState } from "react";
 import type { AttributeMeta } from "./AttributeFilterDialog";
@@ -24,6 +25,8 @@ export function ClientContainer({ result }: Props) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDenseGroupEnabled, setIsDenseGroupEnabled] = useState(true);
   const [showClusterLabels, setShowClusterLabels] = useState(true);
+  const [selectedClusterIds, setSelectedClusterIds] = useState<string[]>([]);
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [treemapLevel, setTreemapLevel] = useState("0");
   const [mounted, setMounted] = useState(false);
 
@@ -244,12 +247,19 @@ export function ClientContainer({ result }: Props) {
     let c: Cluster[] = [];
     if (selectedChart === "scatterDensity") {
       const max = Math.max(...filteredResult.clusters.map((c) => c.level));
-      c = filteredResult.clusters.filter((c) => c.level === max);
+      const availableClusters = filteredResult.clusters.filter((c) => c.level === max);
+      
+      if (selectedClusterIds.length > 0) {
+        c = availableClusters.filter(cluster => selectedClusterIds.includes(cluster.id));
+      } else {
+        c = availableClusters.length > 0 ? [availableClusters[0]] : [];
+      }
     } else {
       c = result.clusters.filter((c) => c.level === 1);
     }
+    
     return c.sort((a, b) => b.value - a.value);
-  }, [result.clusters, filteredResult.clusters, selectedChart]);
+  }, [result.clusters, filteredResult.clusters, selectedChart, selectedClusterIds]);
 
   // --- その他UIハンドラ ---
   const handleCloseDisplaySetting = () => setOpenDensityFilterSetting(false);
@@ -257,18 +267,38 @@ export function ClientContainer({ result }: Props) {
   const handleCloseAttributeFilter = () => setOpenAttributeFilter(false);
   const handleChartChange = (selectedChart: string) => {
     setSelectedChart(selectedChart);
-    if (selectedChart === "scatterAll") updateFilteredResult(1, 0, attributeFilters, textSearch);
+    if (selectedChart === "scatterAll") {
+      updateFilteredResult(1, 0, attributeFilters, textSearch);
+      setSelectedClusterIds([]);
+    }
     if (selectedChart === "treemap") {
       // 属性フィルターをリセットせずに維持
       updateFilteredResult(1, 0, attributeFilters, textSearch);
+      setSelectedClusterIds([]);
     }
-    if (selectedChart === "scatterDensity") updateFilteredResult(maxDensity, minValue, attributeFilters, textSearch);
+    if (selectedChart === "scatterDensity") {
+      updateFilteredResult(maxDensity, minValue, attributeFilters, textSearch);
+      if (selectedClusterIds.length === 0) {
+        const max = Math.max(...filteredResult.clusters.map((c) => c.level));
+        const availableClusters = filteredResult.clusters.filter((c) => c.level === max);
+        if (availableClusters.length > 0) {
+          setSelectedClusterIds([availableClusters[0].id]);
+        }
+      }
+    }
   };
   const handleClickDensitySetting = () => setOpenDensityFilterSetting(true);
   const handleClickFullscreen = () => setIsFullscreen(true);
   const handleOpenAttributeFilter = () => setOpenAttributeFilter(true);
   const handleExitFullscreen = () => setIsFullscreen(false);
   const handleTreeZoom = (value: string) => setTreemapLevel(value);
+  const handleClusterSelectionChange = (clusterIds: string[]) => setSelectedClusterIds(clusterIds);
+  const handleToggleMultiSelect = (enabled: boolean) => {
+    setMultiSelectMode(enabled);
+    if (!enabled && selectedClusterIds.length > 1) {
+      setSelectedClusterIds(selectedClusterIds.slice(0, 1));
+    }
+  };
 
   // --- マウント待ち ---
   if (!mounted) {
@@ -322,6 +352,18 @@ export function ClientContainer({ result }: Props) {
           return allFilteredAttributes.size + (textSearch.trim() !== "" ? 1 : 0);
         })()}
       />
+      {selectedChart === "scatterDensity" && (
+        <ClusterSelector
+          clusters={result.clusters.filter((c) => {
+            const max = Math.max(...filteredResult.clusters.map((c) => c.level));
+            return filteredResult.clusters.filter((c) => c.level === max).map(c => c.id).includes(c.id);
+          })}
+          selectedClusterIds={selectedClusterIds}
+          onSelectionChange={handleClusterSelectionChange}
+          multiSelectMode={multiSelectMode}
+          onToggleMultiSelect={handleToggleMultiSelect}
+        />
+      )}
       <Chart
         result={filteredResult}
         selectedChart={selectedChart}
@@ -329,6 +371,7 @@ export function ClientContainer({ result }: Props) {
         onExitFullscreen={handleExitFullscreen}
         showClusterLabels={showClusterLabels}
         onToggleClusterLabels={handleToggleClusterLabels}
+        selectedClusterIds={selectedClusterIds}
         treemapLevel={treemapLevel}
         onTreeZoom={handleTreeZoom}
         filterState={{

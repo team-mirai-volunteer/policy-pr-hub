@@ -13,6 +13,7 @@ type ReportProps = {
   onExitFullscreen: () => void;
   showClusterLabels: boolean;
   onToggleClusterLabels: (show: boolean) => void;
+  selectedClusterIds?: string[];
   treemapLevel: string;
   onTreeZoom: (level: string) => void;
 };
@@ -32,6 +33,7 @@ export function Chart({
   onExitFullscreen,
   showClusterLabels,
   onToggleClusterLabels,
+  selectedClusterIds,
   treemapLevel,
   onTreeZoom,
   filterState, // 追加: フィルター状態
@@ -123,6 +125,7 @@ export function Chart({
                 targetLevel={selectedChart === "scatterAll" ? 1 : Math.max(...result.clusters.map((c) => c.level))}
                 onHover={() => setTimeout(avoidHoverTextCoveringShrinkButton, 500)}
                 showClusterLabels={showClusterLabels}
+                selectedClusterIds={selectedClusterIds}
                 filteredArgumentIds={filteredArgumentIds}
                 config={result.config}
               />
@@ -163,6 +166,7 @@ export function Chart({
             argumentList={result.arguments}
             targetLevel={selectedChart === "scatterAll" ? 1 : Math.max(...result.clusters.map((c) => c.level))}
             showClusterLabels={showClusterLabels}
+            selectedClusterIds={selectedClusterIds}
             filteredArgumentIds={filteredArgumentIds}
             config={result.config}
           />
