@@ -462,13 +462,13 @@ export function ScatterChart({
 
   /**
    * 表示対象のクラスターを取得（密度フィルターされたものは除外）
+   * 選択状態に関わらず全てのクラスターを対象にして、ラベル位置が変動しないようにする
    * @returns 表示すべきクラスターのリスト
    */
   function getValidClustersForLabels() {
     return clusterDataSets.filter(dataSet => {
       const isNotDensityFiltered = !dataSet.cluster.densityFiltered;
-      const isSelected = !selectedClusterIds || selectedClusterIds.length === 0 || selectedClusterIds.includes(dataSet.cluster.id);
-      return isNotDensityFiltered && isSelected;
+      return isNotDensityFiltered;
     });
   }
 
